@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import AuthModal from './AuthModal';
+import BrandLogo from './BrandLogo';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -28,10 +29,7 @@ export const Navbar: React.FC = () => {
     <>
       <header className="app-header">
         <div className="container app-header-inner">
-          <Link to="/" className="hero-brand" style={{ color: 'var(--color-primary)', fontFamily: 'var(--font-heading)', fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>
-            <Compass size={24} color="var(--color-accent)" />
-            <span>Paryatak<span style={{ color: 'var(--color-accent)' }}>Route</span></span>
-          </Link>
+          <BrandLogo variant="light" height={44} />
 
           {/* Desktop Navigation Links */}
           <nav className="nav-links-standard">

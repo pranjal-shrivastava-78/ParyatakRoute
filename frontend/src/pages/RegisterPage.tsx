@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Compass, Mail, Lock, User, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { extractErrorMessage } from '../services/authService';
+import BrandLogo from '../components/BrandLogo';
 
 export const RegisterPage: React.FC = () => {
   const [name, setName] = useState('');
@@ -77,22 +78,9 @@ export const RegisterPage: React.FC = () => {
       >
         {/* Brand Header */}
         <div style={{ textAlign: 'center', marginBottom: 'var(--spacing-28)' }}>
-          <Link
-            to="/"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              textDecoration: 'none',
-              color: 'var(--color-ink)',
-              fontSize: 22,
-              fontWeight: 'var(--font-weight-extrabold)',
-              marginBottom: 12,
-            }}
-          >
-            <Compass size={28} color="var(--color-hopper-blue)" />
-            <span>ParyatakRoute</span>
-          </Link>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            <BrandLogo variant="light" height={48} />
+          </div>
           <h1 style={{ fontSize: 'var(--text-card-heading)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-ink)' }}>
             Start your travel journey
           </h1>

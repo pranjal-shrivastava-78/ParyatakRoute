@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Lock, Mail, User, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { extractErrorMessage } from '../services/authService';
+import BrandLogo from './BrandLogo';
 
 interface AuthModalProps {
   onClose: () => void;
@@ -77,6 +78,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </button>
 
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+            <BrandLogo variant="light" height={44} clickable={false} />
+          </div>
           <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: 'var(--color-ink)' }}>
             {mode === 'login' ? 'Welcome Back' : 'Create Your Account'}
           </h2>

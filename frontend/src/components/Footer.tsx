@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Compass, ShieldCheck, Heart, Sparkles } from 'lucide-react';
+import BrandLogo from './BrandLogo';
 
 export const Footer: React.FC = () => {
   return (
@@ -84,11 +85,8 @@ export const Footer: React.FC = () => {
       {/* Baseline disclaimer and attribution */}
       <div style={{ backgroundColor: 'var(--color-bg-main)', borderTop: '1px solid var(--color-divider-gray)', padding: '24px 0' }}>
         <div className="container" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Compass size={20} color="var(--color-accent)" />
-            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, color: 'var(--color-primary)', fontSize: 18 }}>
-              Paryatak<span style={{ color: 'var(--color-accent)' }}>Route</span>
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <BrandLogo variant="light" height={40} />
             <span style={{ color: 'var(--color-placeholder-gray)', margin: '0 4px' }}>•</span>
             <span style={{ fontSize: 13, color: 'var(--color-graphite)' }}>
               Intelligent Travel Engine & Real-Time Geospatial System

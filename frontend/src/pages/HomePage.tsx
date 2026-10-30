@@ -20,6 +20,7 @@ import {
   Camera,
 } from 'lucide-react';
 import AuthModal from '../components/AuthModal';
+import BrandLogo from '../components/BrandLogo';
 import { useAuth } from '../context/AuthContext';
 import { favouriteService } from '../services/favouriteService';
 import { travelDataService } from '../services/travelDataService';
@@ -941,6 +942,9 @@ export const HomePage: React.FC = () => {
             }}
           >
             <div style={{ maxWidth: 640 }}>
+              <div style={{ marginBottom: 16 }}>
+                <BrandLogo variant="dark" height={54} clickable={false} />
+              </div>
               <div
                 style={{
                   display: 'inline-flex',
@@ -1093,9 +1097,8 @@ export const HomePage: React.FC = () => {
                 </div>
                 {/* Phone screen content */}
                 <div style={{ padding: 16, backgroundColor: 'var(--color-bg-main)', flex: 1, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                    <Compass size={18} color="var(--color-accent)" />
-                    <span style={{ fontWeight: 800, fontSize: 13, color: 'var(--color-primary)' }}>ParyatakRoute Mobile</span>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+                    <BrandLogo variant="light" height={28} clickable={false} />
                   </div>
                   <div style={{ backgroundColor: 'var(--color-primary-subtle)', padding: 12, borderRadius: 12, marginBottom: 10 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-primary)' }}>DAY 1 • LEH LADAKH</div>

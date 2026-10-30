@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Compass, Sparkles, MapPin, Calendar, Heart, User, LogIn, MessageSquare, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import BrandLogo from './BrandLogo';
 
 interface HeroNavProps {
   onOpenAuth: () => void;
@@ -20,10 +21,7 @@ export const HeroNav: React.FC<HeroNavProps> = ({
   return (
     <div className="hero-nav-bar">
       {/* Brand */}
-      <Link to="/" className="hero-brand">
-        <Compass size={26} color="#ffffff" />
-        <span>ParyatakRoute</span>
-      </Link>
+      <BrandLogo variant="dark" height={42} />
 
       {/* Transparent Product Navigation per DESIGN.md */}
       <nav className="hero-product-nav">

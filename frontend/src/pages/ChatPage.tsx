@@ -15,6 +15,7 @@ import {
 import { chatService } from '../services/chatService';
 import { SUGGESTED_PROMPTS } from '../fixtures/chatData';
 import { useNavigate, useLocation } from 'react-router-dom';
+import BrandLogo from '../components/BrandLogo';
 
 interface Message {
   id: string;
@@ -234,7 +235,7 @@ export const ChatPage: React.FC = () => {
                 <div style={{ fontSize: 12, color: 'var(--color-graphite)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
                   {msg.sender === 'assistant' ? (
                     <>
-                      <Sparkles size={12} color="var(--color-hopper-blue)" />
+                      <BrandLogo variant="light" height={20} clickable={false} />
                       <span style={{ fontWeight: 600 }}>Paryatak Assistant</span>
                     </>
                   ) : (
