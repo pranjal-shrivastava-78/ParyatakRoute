@@ -66,8 +66,8 @@ export const LoginPage: React.FC = () => {
       >
         {/* Brand Header */}
         <div style={{ textAlign: 'center', marginBottom: 'var(--spacing-28)' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-            <BrandLogo variant="light" height={48} />
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+            <BrandLogo variant="light" layout="vertical" emblemHeight={54} fontSize={24} withTagline={true} />
           </div>
           <h1 style={{ fontSize: 'var(--text-card-heading)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-ink)' }}>
             Welcome back, traveler

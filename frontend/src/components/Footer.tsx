@@ -86,7 +86,7 @@ export const Footer: React.FC = () => {
       <div style={{ backgroundColor: 'var(--color-bg-main)', borderTop: '1px solid var(--color-divider-gray)', padding: '24px 0' }}>
         <div className="container" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <BrandLogo variant="light" height={40} />
+            <BrandLogo variant="light" layout="horizontal" emblemHeight={36} fontSize={19} />
             <span style={{ color: 'var(--color-placeholder-gray)', margin: '0 4px' }}>•</span>
             <span style={{ fontSize: 13, color: 'var(--color-graphite)' }}>
               Intelligent Travel Engine & Real-Time Geospatial System

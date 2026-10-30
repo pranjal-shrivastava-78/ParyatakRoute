@@ -29,7 +29,7 @@ export const Navbar: React.FC = () => {
     <>
       <header className="app-header">
         <div className="container app-header-inner">
-          <BrandLogo variant="light" height={44} />
+          <BrandLogo variant="light" layout="horizontal" emblemHeight={42} fontSize={22} />
 
           {/* Desktop Navigation Links */}
           <nav className="nav-links-standard">

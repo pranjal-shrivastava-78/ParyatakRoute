@@ -78,8 +78,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </button>
 
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-            <BrandLogo variant="light" height={44} clickable={false} />
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            <BrandLogo variant="light" layout="vertical" emblemHeight={48} fontSize={22} clickable={false} />
           </div>
           <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: 'var(--color-ink)' }}>
             {mode === 'login' ? 'Welcome Back' : 'Create Your Account'}

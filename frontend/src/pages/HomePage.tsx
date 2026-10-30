@@ -334,7 +334,7 @@ export const HomePage: React.FC = () => {
 
           <div className="travel-card-content">
             <div className="travel-card-eyebrow">
-              <Compass size={14} color="var(--color-secondary-accent)" />
+              <BrandLogo variant="dark" layout="emblem-only" emblemHeight={18} clickable={false} />
               <span>Curated Journeys • Geospatial Intelligence</span>
             </div>
 
@@ -569,7 +569,7 @@ export const HomePage: React.FC = () => {
 
           <div className="ai-card-content">
             <div className="ai-badge-indicator">
-              <Sparkles size={14} color="var(--color-accent)" />
+              <BrandLogo variant="dark" layout="emblem-only" emblemHeight={18} clickable={false} />
               <span>AI-Powered Travel Discovery</span>
             </div>
 
@@ -942,8 +942,15 @@ export const HomePage: React.FC = () => {
             }}
           >
             <div style={{ maxWidth: 640 }}>
-              <div style={{ marginBottom: 16 }}>
-                <BrandLogo variant="dark" height={54} clickable={false} />
+              <div style={{ marginBottom: 18 }}>
+                <BrandLogo
+                  variant="dark"
+                  layout="horizontal"
+                  emblemHeight={48}
+                  fontSize={26}
+                  withTagline={true}
+                  clickable={false}
+                />
               </div>
               <div
                 style={{

@@ -114,11 +114,11 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
           {/* Header */}
           <div className="chat-drawer-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <BrandLogo variant="dark" height={32} clickable={false} />
+              <BrandLogo variant="dark" layout="emblem-only" emblemHeight={30} clickable={false} />
               <div>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>AI Travel Assistant</div>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>ParyatakRoute Assistant</div>
                 <div style={{ fontSize: 11, opacity: 0.9 }}>
-                  Powered by Groq AI
+                  Intelligent Journey Companion
                 </div>
               </div>
             </div>

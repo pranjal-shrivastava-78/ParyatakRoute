@@ -166,8 +166,8 @@ export const ChatPage: React.FC = () => {
         {/* Page Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-24)', flexWrap: 'wrap', gap: 'var(--spacing-12)' }}>
           <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 'var(--radius-pills)', backgroundColor: 'var(--color-hopper-blue-subtle)', color: 'var(--color-hopper-blue)', fontSize: 13, fontWeight: 'var(--font-weight-semibold)', marginBottom: 8 }}>
-              <Sparkles size={14} />
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 14px', borderRadius: 'var(--radius-pills)', backgroundColor: 'var(--color-primary-subtle)', color: 'var(--color-primary)', fontSize: 13, fontWeight: 'var(--font-weight-semibold)', marginBottom: 8 }}>
+              <BrandLogo variant="light" layout="emblem-only" emblemHeight={18} clickable={false} />
               <span>ParyatakRoute Intelligence</span>
             </div>
             <h1 style={{ fontSize: 'var(--text-app-heading)', lineHeight: 'var(--leading-app-heading)', fontWeight: 'var(--font-weight-extrabold)', color: 'var(--color-ink)' }}>
@@ -235,7 +235,7 @@ export const ChatPage: React.FC = () => {
                 <div style={{ fontSize: 12, color: 'var(--color-graphite)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
                   {msg.sender === 'assistant' ? (
                     <>
-                      <BrandLogo variant="light" height={20} clickable={false} />
+                      <BrandLogo variant="light" layout="emblem-only" emblemHeight={22} clickable={false} />
                       <span style={{ fontWeight: 600 }}>Paryatak Assistant</span>
                     </>
                   ) : (
