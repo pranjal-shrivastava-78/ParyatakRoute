@@ -299,3 +299,5 @@ If setting up manually without a blueprint:
 4. Click **Create Web Service**.
 
 Once deployed, the live service URL will be available on the Render service dashboard (e.g. `https://paryatakroute-backend.onrender.com`). Verify deployment health via `GET /health` and `GET /health/ready`.
+#   P a r y a t a k R o u t e  
+ 
