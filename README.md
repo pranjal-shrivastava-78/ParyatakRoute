@@ -249,12 +249,53 @@ This script exercises:
 
 ## 9. Production Deployment Overview
 
-ParyatakRoute is ready for zero-downtime deployment on Render:
+ParyatakRoute is architected for zero-downtime deployment on Render as a Python Web Service.
 
-- **Blueprint**: Managed automatically by [`render.yaml`](render.yaml).
-- **Service Type**: Web Service (`paryatakroute-backend`).
-- **Runtime**: Python (`backend-fastapi` root directory).
-- **Build Command**: `pip install --upgrade pip && pip install -r requirements.txt`.
-- **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
-- **Health Probe**: `/health` HTTP endpoint.
-- **Environment Management**: Secrets (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `GROQ_API_KEY`, etc.) are configured securely through the Render Dashboard.
+### Option A: Automated Blueprint Deployment (Recommended)
+1. Commit and push the repository to GitHub:
+   ```bash
+   git remote add origin https://github.com/<your-username>/paryatakroute.git
+   git branch -M main
+   git push -u origin main
+   ```
+2. In the [Render Dashboard](https://dashboard.render.com/), click **New** -> **Blueprint**.
+3. Connect your GitHub repository. Render automatically detects [`render.yaml`](render.yaml) and configures:
+   - Service Name: `paryatakroute-backend`
+   - Runtime: `Python` (pinned to 3.13.0)
+   - Root Directory: `backend-fastapi`
+   - Build Command: `pip install --upgrade pip && pip install -r requirements.txt`
+   - Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - Health Check Path: `/health`
+4. Provide the secret environment variables (`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `GROQ_API_KEY`, etc.) when prompted.
+5. Click **Apply**.
+
+### Option B: Manual Web Service Creation
+If setting up manually without a blueprint:
+1. In the Render Dashboard, click **New** -> **Web Service** and select your repository.
+2. Configure settings:
+   - **Name**: `paryatakroute-backend`
+   - **Region**: Oregon (or closest to your Supabase region)
+   - **Branch**: `main` (or `master`)
+   - **Root Directory**: `backend-fastapi`
+   - **Runtime**: `Python`
+   - **Build Command**: `pip install --upgrade pip && pip install -r requirements.txt`
+   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - **Health Check Path**: `/health`
+3. Add Environment Variables:
+   - `APP_ENV`: `production`
+   - `PYTHON_VERSION`: `3.13.0`
+   - `PORT`: `10000`
+   - `SUPABASE_URL`: `https://<your-project-id>.supabase.co`
+   - `SUPABASE_PUBLISHABLE_KEY`: `sb_publishable_...`
+   - `SUPABASE_SERVICE_ROLE_KEY`: `eyJhbGciOi...`
+   - `SUPABASE_JWT_SECRET`: `your_supabase_jwt_secret`
+   - `GROQ_API_KEY`: `gsk_...`
+   - `GROQ_MODEL`: `openai/gpt-oss-120b`
+   - `GROQ_CHAT_MODEL`: `openai/gpt-oss-20b`
+   - `GROQ_TIMEOUT_SECONDS`: `30`
+   - `GROQ_MAX_RETRIES`: `3`
+   - `FRONTEND_URL`: Allowed client domain (e.g., `https://paryatakroute.vercel.app`)
+   - `CORS_ALLOWED_ORIGINS`: Comma-separated allowed origins
+4. Click **Create Web Service**.
+
+Once deployed, the live service URL will be available on the Render service dashboard (e.g. `https://paryatakroute-backend.onrender.com`). Verify deployment health via `GET /health` and `GET /health/ready`.
