@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Compass, Mail, Lock, LogIn, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Compass, Mail, Lock, LogIn, ArrowRight, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { extractErrorMessage } from '../services/authService';
 import BrandLogo from '../components/BrandLogo';
@@ -9,6 +9,7 @@ export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [demoNotice, setDemoNotice] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const { login } = useAuth();
@@ -37,9 +38,10 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleFillDemo = () => {
-    setEmail('traveler@paryatakroute.org');
-    setPassword('Paryatak@2026');
+  const handleTryDemo = () => {
+    setEmail('demo@paryatakroute.in');
+    setPassword('Paryatak@Demo2026');
+    setDemoNotice('Demo account – No registration required.');
     setError(null);
   };
 
@@ -77,39 +79,92 @@ export const LoginPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Demo Fast Track Pill */}
+        {/* Prominent & Elegant Try Demo Account Card */}
         <div
           style={{
-            backgroundColor: 'var(--color-cloud)',
-            border: '1px solid var(--color-divider-gray)',
-            borderRadius: 'var(--radius-compactcontrols)',
-            padding: '10px 14px',
-            marginBottom: 'var(--spacing-20)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            backgroundColor: 'var(--color-cloud, #F7F5EF)',
+            border: '1.5px solid var(--color-primary, #183D32)',
+            borderRadius: 'var(--radius-cards, 12px)',
+            padding: '14px 16px',
+            marginBottom: 'var(--spacing-20, 20px)',
+            boxShadow: '0 2px 8px rgba(24, 61, 50, 0.05)',
           }}
         >
-          <div style={{ fontSize: 13, color: 'var(--color-graphite)' }}>
-            <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>Testing?</span> Auto-fill sample credentials
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Sparkles size={16} color="var(--color-accent, #D97745)" />
+              <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-primary, #183D32)' }}>
+                Instant Preview Access
+              </span>
+            </div>
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                padding: '2px 7px',
+                borderRadius: 10,
+                backgroundColor: 'rgba(217, 119, 69, 0.12)',
+                color: 'var(--color-accent, #D97745)',
+              }}
+            >
+              Demo Ready
+            </span>
           </div>
+
+          <p style={{ fontSize: 12, color: 'var(--color-graphite)', marginBottom: 12, lineHeight: 1.4 }}>
+            Explore pre-loaded itineraries (Jaipur, Goa, Manali), test AI features, and review trip vaults.
+          </p>
+
           <button
             type="button"
-            onClick={handleFillDemo}
+            onClick={handleTryDemo}
             style={{
-              background: 'none',
-              border: '1px solid var(--color-hopper-blue)',
-              color: 'var(--color-hopper-blue)',
-              borderRadius: 'var(--radius-pills)',
-              padding: '3px 10px',
-              fontSize: 12,
+              width: '100%',
+              backgroundColor: 'var(--color-primary, #183D32)',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: 'var(--radius-pills, 9999px)',
+              padding: '9px 16px',
+              fontSize: 13,
               fontWeight: 600,
               cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 7,
+              transition: 'opacity 0.15s ease',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.92')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
           >
-            Fill Demo
+            <Sparkles size={14} />
+            <span>Try Demo Account</span>
           </button>
         </div>
+
+        {demoNotice && (
+          <div
+            style={{
+              backgroundColor: '#EBF5F0',
+              border: '1px solid #183D32',
+              borderRadius: 'var(--radius-compactcontrols, 8px)',
+              padding: '10px 14px',
+              color: '#183D32',
+              fontSize: 13,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 'var(--spacing-16, 16px)',
+            }}
+          >
+            <CheckCircle2 size={16} color="var(--color-success, #2E7D32)" style={{ flexShrink: 0 }} />
+            <span>
+              {demoNotice} Click <strong>Sign In</strong> below to continue.
+            </span>
+          </div>
+        )}
 
         {error && (
           <div

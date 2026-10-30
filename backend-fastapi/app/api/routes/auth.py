@@ -392,6 +392,21 @@ async def get_current_user_profile(
     return APIResponse(success=True, data=payload)
 
 
+DEMO_USER_ID = "a95fb7ab-5b3c-4074-ac2c-ce8621cc6017"
+DEMO_USER_EMAIL = "demo@paryatakroute.in"
+
+
+def is_demo_user(user: AuthenticatedUser) -> bool:
+    """Helper to detect if authenticated session belongs to the permanent demo account."""
+    if not user:
+        return False
+    if str(user.id) == DEMO_USER_ID:
+        return True
+    if user.email and user.email.strip().lower() == DEMO_USER_EMAIL:
+        return True
+    return False
+
+
 @router.patch("/me", response_model=APIResponse[dict[str, Any]], status_code=status.HTTP_200_OK, summary="Update Current Authenticated Profile")
 async def update_current_user_profile(
     body: UserProfileUpdate,
@@ -399,6 +414,17 @@ async def update_current_user_profile(
 ) -> APIResponse[dict[str, Any]]:
     """Update profile information (display name, avatar) for the authenticated user."""
     updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    
+    # Demo Account Protection: prevent changing email, password, or escalating role
+    if is_demo_user(current_user):
+        disallowed_fields = {"email", "password", "role"}
+        if any(f in updates for f in disallowed_fields):
+            raise AppException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                error_code="DEMO_ACCOUNT_PROTECTED",
+                message="Demo account credentials and permissions are protected and cannot be modified.",
+            )
+
     updated = await profile_repo.update(current_user.id, updates)
     return APIResponse(
         success=True,
@@ -413,3 +439,30 @@ async def update_current_user_profile(
             "updated_at": str(updated.updated_at) if updated.updated_at else None,
         },
     )
+
+
+@router.delete("/me", response_model=APIResponse[dict[str, str]], status_code=status.HTTP_200_OK, summary="Delete Current Authenticated User Account")
+async def delete_current_user_account(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+) -> APIResponse[dict[str, str]]:
+    """Delete authenticated user account. Protected for permanent demo account."""
+    if is_demo_user(current_user):
+        raise AppException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            error_code="DEMO_ACCOUNT_PROTECTED",
+            message="The permanent demo account is protected and cannot be deleted.",
+        )
+
+    admin_client, _ = _get_supabase_clients()
+    if admin_client:
+        try:
+            admin_client.auth.admin.delete_user(current_user.id)
+        except Exception as e:
+            logger.warning(f"[Auth] Supabase admin delete user error: {e}")
+
+    return APIResponse(
+        success=True,
+        message="Account deleted successfully",
+        data={"message": f"User account {current_user.id} has been permanently deleted."},
+    )
+

@@ -60,11 +60,26 @@ async def update_trip(
     return APIResponse(success=True, data=updated)
 
 
+SEEDED_DEMO_TRIP_IDS = {
+    "a1111111-2222-3333-4444-555555555551",
+    "a2222222-2222-3333-4444-555555555552",
+    "a3333333-2222-3333-4444-555555555553",
+}
+
+
 @router.delete("/{trip_id}", response_model=APIResponse[dict[str, Any]], status_code=status.HTTP_200_OK, summary="Delete Trip")
 async def delete_trip(
     trip_id: str,
     current_user: AuthenticatedUser = Depends(get_current_user),
 ) -> APIResponse[dict[str, Any]]:
     """Delete trip and cascaded itineraries with ownership check."""
+    from app.core.exceptions import AppException
+    if trip_id in SEEDED_DEMO_TRIP_IDS:
+        raise AppException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            error_code="DEMO_TRIP_PROTECTED",
+            message="Pre-seeded sample itineraries for the demo account are protected and cannot be deleted.",
+        )
     deleted = await trip_service.delete_trip(trip_id, current_user.id)
     return APIResponse(success=True, data={"id": trip_id, "deleted": deleted})
+

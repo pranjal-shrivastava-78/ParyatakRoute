@@ -1,6 +1,6 @@
 import os
 from typing import List
-from pydantic import Field
+from pydantic import Field, AliasChoices
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,10 +21,10 @@ class Settings(BaseSettings):
     )
 
     # Supabase Credentials
-    SUPABASE_URL: str = Field(default="")
-    SUPABASE_PUBLISHABLE_KEY: str = Field(default="")
-    SUPABASE_SERVICE_ROLE_KEY: str = Field(default="")
-    SUPABASE_JWT_SECRET: str = Field(default="dev-supabase-jwt-secret-for-testing-only-32chars")
+    SUPABASE_URL: str = Field(default="", validation_alias=AliasChoices("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL", "VITE_SUPABASE_URL"))
+    SUPABASE_PUBLISHABLE_KEY: str = Field(default="", validation_alias=AliasChoices("SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "VITE_SUPABASE_ANON_KEY", "SUPABASE_KEY"))
+    SUPABASE_SERVICE_ROLE_KEY: str = Field(default="", validation_alias=AliasChoices("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_KEY"))
+    SUPABASE_JWT_SECRET: str = Field(default="dev-supabase-jwt-secret-for-testing-only-32chars", validation_alias=AliasChoices("SUPABASE_JWT_SECRET", "JWT_SECRET"))
 
     # External APIs (Optional)
     PLACES_API_KEY: str = Field(default="")

@@ -246,7 +246,20 @@ export const ProfileSettingsPage: React.FC = () => {
                 {user.email}
               </p>
 
-              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                {user.email === 'demo@paryatakroute.in' && (
+                  <span
+                    className="badge"
+                    style={{
+                      backgroundColor: 'rgba(24, 61, 50, 0.1)',
+                      color: 'var(--color-primary, #183D32)',
+                      border: '1px solid var(--color-primary, #183D32)',
+                      fontWeight: 700,
+                    }}
+                  >
+                    Protected Demo Account
+                  </span>
+                )}
                 <span className="badge badge-verified">
                   <CheckCircle2 size={12} />
                   <span>Role: {user.role}</span>
