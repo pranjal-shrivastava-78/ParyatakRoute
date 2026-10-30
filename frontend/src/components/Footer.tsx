@@ -82,11 +82,13 @@ export const Footer: React.FC = () => {
       </div>
 
       {/* Baseline disclaimer and attribution */}
-      <div style={{ backgroundColor: 'var(--color-white)', borderTop: '1px solid var(--color-divider-gray)', padding: '24px 0' }}>
+      <div style={{ backgroundColor: 'var(--color-bg-main)', borderTop: '1px solid var(--color-divider-gray)', padding: '24px 0' }}>
         <div className="container" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Compass size={20} color="var(--color-hopper-blue)" />
-            <span style={{ fontWeight: 800, color: 'var(--color-ink)', fontSize: 16 }}>ParyatakRoute</span>
+            <Compass size={20} color="var(--color-accent)" />
+            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, color: 'var(--color-primary)', fontSize: 18 }}>
+              Paryatak<span style={{ color: 'var(--color-accent)' }}>Route</span>
+            </span>
             <span style={{ color: 'var(--color-placeholder-gray)', margin: '0 4px' }}>•</span>
             <span style={{ fontSize: 13, color: 'var(--color-graphite)' }}>
               Intelligent Travel Engine & Real-Time Geospatial System

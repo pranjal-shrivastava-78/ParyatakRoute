@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { chatService } from '../services/chatService';
 import { SUGGESTED_PROMPTS } from '../fixtures/chatData';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface Message {
   id: string;
@@ -57,6 +57,8 @@ export const ChatPage: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const initialPromptHandled = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -65,6 +67,19 @@ export const ChatPage: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
+
+  // Automatically submit initial prompt passed from Homepage Card 2 ("Ask AI")
+  useEffect(() => {
+    if (initialPromptHandled.current) return;
+    const promptFromState = (location.state as any)?.initialPrompt;
+    const promptFromSearch = new URLSearchParams(location.search).get('prompt');
+    const promptToSubmit = (promptFromState || promptFromSearch || '').trim();
+
+    if (promptToSubmit) {
+      initialPromptHandled.current = true;
+      handleSend(promptToSubmit);
+    }
+  }, [location]);
 
   const handleSend = async (messageText?: string, isRetry: boolean = false) => {
     const textToSend = (messageText || (isRetry && lastFailedText ? lastFailedText : input)).trim();

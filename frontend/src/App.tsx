@@ -27,7 +27,7 @@ const AppLayout: React.FC = () => {
 
   return (
     <>
-      {!isHome && <Navbar />}
+      <Navbar />
       <Routes>
         {/* Public Routes - No login required */}
         <Route path="/" element={<HomePage />} />
