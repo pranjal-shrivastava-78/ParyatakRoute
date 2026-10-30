@@ -32,6 +32,7 @@ const AppLayout: React.FC = () => {
         {/* Public Routes - No login required */}
         <Route path="/" element={<HomePage />} />
         <Route path="/explore" element={<ExplorePage />} />
+        <Route path="/plan-trip" element={<CreateTripPage />} />
         <Route path="/create" element={<CreateTripPage />} />
         <Route path="/trips/create" element={<CreateTripPage />} />
         <Route path="/itineraries/:itineraryId" element={<ItineraryViewPage />} />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Sparkles,
@@ -15,13 +15,14 @@ import {
   Hotel,
   Utensils,
   FileText,
+  ArrowRight,
 } from 'lucide-react';
 import { tripService } from '../services/tripService';
 import { itineraryService } from '../services/itineraryService';
-import { travelDataService } from '../services/travelDataService';
-import { TripCreate, NormalizedPlace } from '../types/api';
+import { TripCreate } from '../types/api';
 import { useAuth } from '../context/AuthContext';
 import AuthModal from '../components/AuthModal';
+import DestinationAutocomplete from '../components/DestinationAutocomplete';
 
 const INTEREST_TAGS = [
   'Historical Monuments',
@@ -38,33 +39,28 @@ const INTEREST_TAGS = [
   'Wildlife Safari',
 ];
 
+interface FormErrors {
+  destination?: string;
+  startDate?: string;
+  endDate?: string;
+  budget?: string;
+  travellers?: string;
+}
+
 export const CreateTripPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  // Form Fields matching TripCreate schema
-  const [destination, setDestination] = useState(searchParams.get('destination') || 'Goa, India');
-  const [startingCity, setStartingCity] = useState('Mumbai');
-  const [startDate, setStartDate] = useState(
-    searchParams.get('startDate') ||
-      (() => {
-        const d = new Date();
-        d.setDate(d.getDate() + 14);
-        return d.toISOString().split('T')[0];
-      })()
-  );
-  const [endDate, setEndDate] = useState(
-    searchParams.get('endDate') ||
-      (() => {
-        const d = new Date();
-        d.setDate(d.getDate() + 19);
-        return d.toISOString().split('T')[0];
-      })()
-  );
-  const [budget, setBudget] = useState(searchParams.get('budget') || '35000');
+  // PART 2: All inputs initially EMPTY by default!
+  // Only prepopulate if explicitly navigated from an Explore destination or URL search params
+  const [destination, setDestination] = useState<string>(searchParams.get('destination') || '');
+  const [startingCity, setStartingCity] = useState<string>('');
+  const [startDate, setStartDate] = useState<string>(searchParams.get('startDate') || '');
+  const [endDate, setEndDate] = useState<string>(searchParams.get('endDate') || '');
+  const [budget, setBudget] = useState<string>(searchParams.get('budget') || '');
   const [currency, setCurrency] = useState('INR');
-  const [travellers, setTravellers] = useState(Number(searchParams.get('travelers')) || 2);
+  const [travellers, setTravellers] = useState<string>(searchParams.get('travelers') || '');
   const [travelStyle, setTravelStyle] = useState('balanced');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([
     'Historical Monuments',
@@ -76,32 +72,14 @@ export const CreateTripPage: React.FC = () => {
   const [dietaryPreferences, setDietaryPreferences] = useState('none');
   const [additionalNotes, setAdditionalNotes] = useState('');
 
-  // Autocomplete state for destination
-  const [suggestions, setSuggestions] = useState<NormalizedPlace[]>([]);
-  const [showDropdown, setShowDropdown] = useState(false);
+  // PART 4: Inline Validation Errors
+  const [errors, setErrors] = useState<FormErrors>({});
 
   // Submission & Generation State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generationStep, setGenerationStep] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
-
-  // Autocomplete lookup
-  useEffect(() => {
-    if (!destination || destination.trim().length < 2) {
-      setSuggestions([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      try {
-        const res = await travelDataService.searchDestinations(destination, 4);
-        setSuggestions(res);
-      } catch {
-        setSuggestions([]);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [destination]);
 
   const toggleInterest = (tag: string) => {
     if (selectedInterests.includes(tag)) {
@@ -111,26 +89,65 @@ export const CreateTripPage: React.FC = () => {
     }
   };
 
+  // PART 4: Comprehensive Form Validation
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    // 1. Destination must be selected or validly entered
+    if (!destination || !destination.trim()) {
+      newErrors.destination = 'Destination is required. Where would you like to go?';
+    }
+
+    // 2. Departure date must be provided
+    if (!startDate) {
+      newErrors.startDate = 'Please select your departure date.';
+    }
+
+    // 3. Return date must be provided
+    if (!endDate) {
+      newErrors.endDate = 'Please select your return date.';
+    }
+
+    // 4. Return date must be after departure date
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (end <= start) {
+        newErrors.endDate = 'Return date must be strictly after the departure date.';
+      } else {
+        const durationDays = Math.round((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1;
+        if (durationDays > 60) {
+          newErrors.endDate = 'Trip duration cannot exceed 60 days.';
+        }
+      }
+    }
+
+    // 5. Budget must be a valid positive INR amount
+    const parsedBudget = Number(budget);
+    if (!budget || isNaN(parsedBudget) || parsedBudget <= 0) {
+      newErrors.budget = 'Please enter a valid positive budget amount in INR (e.g. 25000).';
+    } else if (parsedBudget < 1000) {
+      newErrors.budget = 'Minimum budget should be at least ₹1,000.';
+    }
+
+    // 6. Traveller selection must be valid
+    const parsedTravellers = Number(travellers);
+    if (!travellers || isNaN(parsedTravellers) || parsedTravellers < 1) {
+      newErrors.travellers = 'Please select at least 1 traveller.';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleFormSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setError(null);
 
-    if (!destination.trim()) {
-      setError('Destination is required.');
-      return;
-    }
-
-    if (new Date(endDate) < new Date(startDate)) {
-      setError('End date must be on or after start date.');
-      return;
-    }
-
-    const durationDays = Math.round(
-      (new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 3600 * 24)
-    ) + 1;
-
-    if (durationDays < 1 || durationDays > 60) {
-      setError('Trip duration must be between 1 and 60 days.');
+    // Validate all required fields
+    const isValid = validateForm();
+    if (!isValid) {
+      setError('Please resolve the required highlighted fields before generating your itinerary.');
       return;
     }
 
@@ -139,10 +156,10 @@ export const CreateTripPage: React.FC = () => {
       starting_city: startingCity.trim() || undefined,
       start_date: startDate,
       end_date: endDate,
-      budget: Number(budget) || 30000,
+      budget: Number(budget),
       currency,
-      travellers,
-      travelers_count: travellers,
+      travellers: Number(travellers),
+      travelers_count: Number(travellers),
       travel_style: travelStyle,
       interests: selectedInterests,
       transport_preference: transportPreference,
@@ -172,10 +189,10 @@ export const CreateTripPage: React.FC = () => {
           starting_city: startingCity.trim() || undefined,
           start_date: startDate,
           end_date: endDate,
-          budget: Number(budget) || 30000,
+          budget: Number(budget),
           currency,
-          travellers,
-          travelers_count: travellers,
+          travellers: Number(travellers),
+          travelers_count: Number(travellers),
           travel_style: travelStyle,
           interests: selectedInterests,
           transport_preference: transportPreference,
@@ -190,7 +207,7 @@ export const CreateTripPage: React.FC = () => {
       clearTimeout(genTimer2);
       setGenerationStep('Done! Loading your personalized journey...');
 
-      // 3. Navigate directly to the generated Itinerary View
+      // Navigate directly to the generated Itinerary View
       navigate(`/itineraries/${itinerary.id}`);
     } catch (err: any) {
       clearTimeout(genTimer1);
@@ -206,21 +223,56 @@ export const CreateTripPage: React.FC = () => {
   };
 
   return (
-    <div className="main-content" style={{ padding: 'var(--spacing-32) 0' }}>
-      <div className="container" style={{ maxWidth: 840 }}>
-        {/* Header */}
+    <div
+      style={{
+        backgroundColor: 'var(--color-bg-main, #F7F5EF)',
+        minHeight: '100vh',
+        padding: '48px 24px 80px 24px',
+      }}
+    >
+      <div style={{ maxWidth: 840, margin: '0 auto' }}>
+        {/* Page Header */}
         <div style={{ marginBottom: 32 }}>
-          <span className="text-link-blue" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: 'var(--color-terracotta, #D97745)',
+              display: 'inline-block',
+              marginBottom: 6,
+            }}
+          >
             Personalized Journey Studio
           </span>
-          <h1 className="heading-app" style={{ marginTop: 4, marginBottom: 8 }}>
+          <h1
+            style={{
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontSize: 'clamp(2.2rem, 4vw, 3rem)',
+              fontWeight: 800,
+              color: 'var(--color-primary, #183D32)',
+              margin: '0 0 10px 0',
+              lineHeight: 1.2,
+            }}
+          >
             Plan Your Next Trip with AI
           </h1>
-          <p className="text-body">
-            Provide your preferred destination, travel pacing, dates, and budget. Our Groq AI engine generates a structured, day-wise schedule with approximate costs and verified waypoints.
+          <p
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 15,
+              color: 'var(--color-graphite, #53635B)',
+              lineHeight: 1.6,
+              margin: 0,
+            }}
+          >
+            Provide your preferred destination, travel pacing, dates, and budget. Our Groq AI engine
+            generates a structured, day-wise schedule with approximate costs and verified waypoints.
           </p>
         </div>
 
+        {/* Global Error Banner */}
         {error && (
           <div
             style={{
@@ -228,11 +280,13 @@ export const CreateTripPage: React.FC = () => {
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: 12,
-              padding: '12px 16px',
-              borderRadius: 'var(--radius-compactcontrols)',
-              backgroundColor: 'var(--color-danger-bg)',
-              color: 'var(--color-danger)',
+              padding: '14px 18px',
+              borderRadius: 14,
+              backgroundColor: 'rgba(217, 56, 58, 0.08)',
+              border: '1.5px solid var(--color-error, #D9383A)',
+              color: 'var(--color-error, #D9383A)',
               fontSize: 14,
+              fontWeight: 600,
               marginBottom: 24,
             }}
           >
@@ -243,13 +297,14 @@ export const CreateTripPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleFormSubmit()}
-              className="btn-secondary"
               style={{
                 fontSize: 13,
                 padding: '6px 14px',
-                height: 'auto',
-                color: 'var(--color-danger)',
-                borderColor: 'var(--color-danger)',
+                borderRadius: 8,
+                border: '1px solid var(--color-error, #D9383A)',
+                backgroundColor: '#ffffff',
+                color: 'var(--color-error, #D9383A)',
+                fontWeight: 700,
                 cursor: 'pointer',
               }}
             >
@@ -260,181 +315,397 @@ export const CreateTripPage: React.FC = () => {
 
         {/* Loading / Generation Progress Modal */}
         {isSubmitting && (
-          <div className="modal-backdrop">
+          <div
+            className="modal-backdrop"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(24, 61, 50, 0.75)',
+              backdropFilter: 'blur(6px)',
+              zIndex: 1200,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 16,
+            }}
+          >
             <div
               className="modal-surface"
               style={{
                 maxWidth: 480,
+                width: '100%',
                 padding: 36,
                 textAlign: 'center',
-                boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+                backgroundColor: '#ffffff',
+                borderRadius: 24,
+                boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
               }}
             >
               <div
                 style={{
-                  width: 56,
-                  height: 56,
+                  width: 58,
+                  height: 58,
                   borderRadius: '50%',
-                  backgroundColor: 'var(--color-hopper-blue-subtle)',
+                  backgroundColor: 'rgba(24, 61, 50, 0.1)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   margin: '0 auto 18px auto',
-                  color: 'var(--color-hopper-blue)',
+                  color: 'var(--color-primary, #183D32)',
                 }}
               >
                 <Sparkles size={28} />
               </div>
-              <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8, color: 'var(--color-ink)' }}>
+              <h2
+                style={{
+                  fontFamily: "'Playfair Display', Georgia, serif",
+                  fontSize: 22,
+                  fontWeight: 800,
+                  marginBottom: 8,
+                  color: 'var(--color-primary, #183D32)',
+                }}
+              >
                 Crafting Your Itinerary
               </h2>
-              <p style={{ fontSize: 14, color: 'var(--color-graphite)', marginBottom: 24 }}>
+              <p style={{ fontSize: 14, color: 'var(--color-graphite, #53635B)', marginBottom: 24 }}>
                 {generationStep}
               </p>
 
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-                <Loader2 size={36} className="spinner" />
+                <Loader2
+                  size={36}
+                  style={{
+                    color: 'var(--color-primary, #183D32)',
+                    animation: 'spin 1s linear infinite',
+                  }}
+                />
               </div>
 
               <div
                 style={{
-                  backgroundColor: 'var(--color-cloud)',
-                  padding: 12,
-                  borderRadius: 10,
+                  backgroundColor: 'var(--color-bg-main, #F7F5EF)',
+                  padding: 14,
+                  borderRadius: 14,
                   fontSize: 12,
-                  color: 'var(--color-graphite)',
+                  color: 'var(--color-graphite, #53635B)',
                   textAlign: 'left',
+                  lineHeight: 1.6,
                 }}
               >
-                <div>✓ Resolving OpenStreetMap coordinates</div>
+                <div>✓ Resolving destination coordinates & geography</div>
                 <div>✓ Generating realistic daily timeline & activities</div>
-                <div>✓ Computing category expenses: transport, food, stays</div>
+                <div>✓ Computing category expenses: transport, stays, food</div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Main Form */}
+        {/* Main Trip Planning Form */}
         <form
           onSubmit={handleFormSubmit}
+          noValidate
           style={{
-            backgroundColor: 'var(--surface-white-canvas)',
-            border: '1px solid var(--color-divider-gray)',
-            borderRadius: 'var(--radius-cards)',
-            padding: 32,
-            boxShadow: '0 2px 12px rgba(0,0,0,0.03)',
+            backgroundColor: '#ffffff',
+            border: '1px solid var(--color-divider-gray, #D8D4C7)',
+            borderRadius: 24,
+            padding: '36px 32px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
           }}
         >
-          {/* Section 1: Where & When */}
-          <div style={{ marginBottom: 28 }}>
-            <h2 className="heading-section" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <MapPin size={20} color="var(--color-hopper-blue)" />
+          {/* SECTION 1: DESTINATION & DATES */}
+          <div style={{ marginBottom: 32 }}>
+            <h2
+              style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontSize: 20,
+                fontWeight: 700,
+                color: 'var(--color-primary, #183D32)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 18,
+              }}
+            >
+              <MapPin size={20} color="var(--color-terracotta, #D97745)" />
               <span>1. Destination & Duration</span>
             </h2>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16 }}>
-              <div className="form-group" style={{ position: 'relative' }}>
-                <label className="form-label">Destination City or Region *</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Goa, India or Kyoto, Japan"
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+              {/* Intelligent Destination Autocomplete */}
+              <div className="form-group">
+                <label
+                  htmlFor="plan-trip-destination"
+                  style={{
+                    display: 'block',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: 'var(--color-text-primary, #26332E)',
+                    marginBottom: 6,
+                  }}
+                >
+                  Destination City or Region *
+                </label>
+                <DestinationAutocomplete
+                  id="plan-trip-destination"
                   value={destination}
-                  onChange={(e) => {
-                    setDestination(e.target.value);
-                    setShowDropdown(true);
+                  onChange={(val) => {
+                    setDestination(val);
+                    if (errors.destination) {
+                      setErrors((prev) => ({ ...prev, destination: undefined }));
+                    }
                   }}
-                  onFocus={() => {
-                    if (suggestions.length > 0) setShowDropdown(true);
-                  }}
-                  required
+                  placeholder="Where would you like to go?"
+                  error={errors.destination}
                 />
-                {showDropdown && suggestions.length > 0 && (
-                  <div className="autocomplete-dropdown">
-                    {suggestions.map((p) => (
-                      <div
-                        key={p.place_id}
-                        className="autocomplete-item"
-                        onClick={() => {
-                          setDestination(p.name);
-                          setShowDropdown(false);
-                        }}
-                      >
-                        <MapPin size={14} color="var(--color-hopper-blue)" />
-                        <span style={{ fontWeight: 600 }}>{p.name}</span>
-                        <span style={{ fontSize: 11, color: 'var(--color-graphite)' }}>({p.display_name.split(',').slice(-2).join(',')})</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
+              {/* Optional Origin City */}
               <div className="form-group">
-                <label className="form-label">Origin City (Optional)</label>
+                <label
+                  htmlFor="starting-city"
+                  style={{
+                    display: 'block',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: 'var(--color-text-primary, #26332E)',
+                    marginBottom: 6,
+                  }}
+                >
+                  Origin City (Optional)
+                </label>
                 <input
+                  id="starting-city"
                   type="text"
-                  className="form-input"
                   placeholder="e.g. Mumbai, Delhi, London"
                   value={startingCity}
                   onChange={(e) => setStartingCity(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    border: '1px solid var(--color-divider-gray, #D8D4C7)',
+                    backgroundColor: '#ffffff',
+                    fontSize: 15,
+                    color: 'var(--color-text-primary, #26332E)',
+                    outline: 'none',
+                  }}
                 />
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            {/* Departure and Return Dates */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 16,
+                marginTop: 16,
+              }}
+            >
+              {/* Departure Date */}
               <div className="form-group">
-                <label className="form-label">Start Date *</label>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={startDate}
-                  min={new Date().toISOString().split('T')[0]}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  required
-                />
+                <label
+                  htmlFor="departure-date"
+                  style={{
+                    display: 'block',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: 'var(--color-text-primary, #26332E)',
+                    marginBottom: 6,
+                  }}
+                >
+                  Departure Date *
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="departure-date"
+                    type="date"
+                    value={startDate}
+                    min={new Date().toISOString().split('T')[0]}
+                    placeholder="Select departure date"
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      if (errors.startDate) {
+                        setErrors((prev) => ({ ...prev, startDate: undefined }));
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: 12,
+                      border: errors.startDate
+                        ? '1.5px solid var(--color-error, #D9383A)'
+                        : '1px solid var(--color-divider-gray, #D8D4C7)',
+                      backgroundColor: '#ffffff',
+                      fontSize: 15,
+                      color: 'var(--color-text-primary, #26332E)',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+                {errors.startDate && (
+                  <p style={{ color: 'var(--color-error, #D9383A)', fontSize: 12, marginTop: 4, fontWeight: 500 }}>
+                    {errors.startDate}
+                  </p>
+                )}
               </div>
+
+              {/* Return Date */}
               <div className="form-group">
-                <label className="form-label">End Date *</label>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={endDate}
-                  min={startDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  required
-                />
+                <label
+                  htmlFor="return-date"
+                  style={{
+                    display: 'block',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: 'var(--color-text-primary, #26332E)',
+                    marginBottom: 6,
+                  }}
+                >
+                  Return Date *
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="return-date"
+                    type="date"
+                    value={endDate}
+                    min={startDate || new Date().toISOString().split('T')[0]}
+                    placeholder="Select return date"
+                    onChange={(e) => {
+                      setEndDate(e.target.value);
+                      if (errors.endDate) {
+                        setErrors((prev) => ({ ...prev, endDate: undefined }));
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: 12,
+                      border: errors.endDate
+                        ? '1.5px solid var(--color-error, #D9383A)'
+                        : '1px solid var(--color-divider-gray, #D8D4C7)',
+                      backgroundColor: '#ffffff',
+                      fontSize: 15,
+                      color: 'var(--color-text-primary, #26332E)',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+                {errors.endDate && (
+                  <p style={{ color: 'var(--color-error, #D9383A)', fontSize: 12, marginTop: 4, fontWeight: 500 }}>
+                    {errors.endDate}
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
-          <div style={{ height: 1, backgroundColor: 'var(--color-cloud)', marginBottom: 28 }} />
+          <div style={{ height: 1, backgroundColor: 'var(--color-divider-gray, #D8D4C7)', marginBottom: 28 }} />
 
-          {/* Section 2: Budget & Travelers */}
-          <div style={{ marginBottom: 28 }}>
-            <h2 className="heading-section" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <DollarSign size={20} color="var(--color-hopper-blue)" />
+          {/* SECTION 2: BUDGET & TRAVELLERS */}
+          <div style={{ marginBottom: 32 }}>
+            <h2
+              style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontSize: 20,
+                fontWeight: 700,
+                color: 'var(--color-primary, #183D32)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 18,
+              }}
+            >
+              <DollarSign size={20} color="var(--color-terracotta, #D97745)" />
               <span>2. Budget & Party Size</span>
             </h2>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 16 }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: 16,
+              }}
+            >
+              {/* Budget Input */}
               <div className="form-group">
-                <label className="form-label">Target Total Budget *</label>
-                <input
-                  type="number"
-                  className="form-input"
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  min="1000"
-                  step="500"
-                  required
-                />
+                <label
+                  htmlFor="budget-input"
+                  style={{
+                    display: 'block',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: 'var(--color-text-primary, #26332E)',
+                    marginBottom: 6,
+                  }}
+                >
+                  Target Total Budget *
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="budget-input"
+                    type="number"
+                    value={budget}
+                    placeholder="Enter your budget (INR)"
+                    min="1000"
+                    step="500"
+                    onChange={(e) => {
+                      setBudget(e.target.value);
+                      if (errors.budget) {
+                        setErrors((prev) => ({ ...prev, budget: undefined }));
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: 12,
+                      border: errors.budget
+                        ? '1.5px solid var(--color-error, #D9383A)'
+                        : '1px solid var(--color-divider-gray, #D8D4C7)',
+                      backgroundColor: '#ffffff',
+                      fontSize: 15,
+                      color: 'var(--color-text-primary, #26332E)',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+                {errors.budget && (
+                  <p style={{ color: 'var(--color-error, #D9383A)', fontSize: 12, marginTop: 4, fontWeight: 500 }}>
+                    {errors.budget}
+                  </p>
+                )}
               </div>
+
+              {/* Currency Selector */}
               <div className="form-group">
-                <label className="form-label">Currency</label>
+                <label
+                  htmlFor="currency-select"
+                  style={{
+                    display: 'block',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: 'var(--color-text-primary, #26332E)',
+                    marginBottom: 6,
+                  }}
+                >
+                  Currency
+                </label>
                 <select
-                  className="form-select"
+                  id="currency-select"
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: 48,
+                    padding: '0 14px',
+                    borderRadius: 12,
+                    border: '1px solid var(--color-divider-gray, #D8D4C7)',
+                    backgroundColor: '#ffffff',
+                    fontSize: 15,
+                    color: 'var(--color-text-primary, #26332E)',
+                    outline: 'none',
+                    cursor: 'pointer',
+                  }}
                 >
                   <option value="INR">INR (₹)</option>
                   <option value="USD">USD ($)</option>
@@ -442,23 +713,81 @@ export const CreateTripPage: React.FC = () => {
                   <option value="GBP">GBP (£)</option>
                 </select>
               </div>
+
+              {/* Travellers Selector with placeholder Select travellers */}
               <div className="form-group">
-                <label className="form-label">Travelers</label>
-                <input
-                  type="number"
-                  className="form-input"
+                <label
+                  htmlFor="travellers-select"
+                  style={{
+                    display: 'block',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: 'var(--color-text-primary, #26332E)',
+                    marginBottom: 6,
+                  }}
+                >
+                  Travellers *
+                </label>
+                <select
+                  id="travellers-select"
                   value={travellers}
-                  onChange={(e) => setTravellers(Number(e.target.value))}
-                  min="1"
-                  max="50"
-                  required
-                />
+                  onChange={(e) => {
+                    setTravellers(e.target.value);
+                    if (errors.travellers) {
+                      setErrors((prev) => ({ ...prev, travellers: undefined }));
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    height: 48,
+                    padding: '0 14px',
+                    borderRadius: 12,
+                    border: errors.travellers
+                      ? '1.5px solid var(--color-error, #D9383A)'
+                      : '1px solid var(--color-divider-gray, #D8D4C7)',
+                    backgroundColor: '#ffffff',
+                    fontSize: 15,
+                    color: travellers ? 'var(--color-text-primary, #26332E)' : 'var(--color-graphite, #53635B)',
+                    outline: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="">Select travellers</option>
+                  <option value="1">1 Traveller (Solo)</option>
+                  <option value="2">2 Travellers (Couple / Duo)</option>
+                  <option value="3">3 Travellers (Small Group)</option>
+                  <option value="4">4 Travellers (Family / Group)</option>
+                  <option value="5">5 Travellers</option>
+                  <option value="6">6+ Travellers</option>
+                </select>
+                {errors.travellers && (
+                  <p style={{ color: 'var(--color-error, #D9383A)', fontSize: 12, marginTop: 4, fontWeight: 500 }}>
+                    {errors.travellers}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Pacing & Travel Style</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
+            {/* Travel Style Buttons */}
+            <div style={{ marginTop: 20 }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: 'var(--color-text-primary, #26332E)',
+                  marginBottom: 8,
+                }}
+              >
+                Pacing & Travel Style
+              </label>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                  gap: 10,
+                }}
+              >
                 {[
                   { id: 'balanced', label: 'Balanced' },
                   { id: 'adventure', label: 'Adventure' },
@@ -471,17 +800,22 @@ export const CreateTripPage: React.FC = () => {
                     type="button"
                     onClick={() => setTravelStyle(s.id)}
                     style={{
-                      padding: '10px 12px',
-                      borderRadius: 'var(--radius-compactcontrols)',
-                      border: travelStyle === s.id
-                        ? '1.5px solid var(--color-hopper-blue)'
-                        : '1px solid var(--color-divider-gray)',
-                      backgroundColor: travelStyle === s.id ? 'var(--color-hopper-blue-subtle)' : 'var(--color-white)',
-                      color: travelStyle === s.id ? 'var(--color-hopper-blue)' : 'var(--color-ink)',
-                      fontWeight: 600,
-                      fontSize: 14,
+                      padding: '10px 14px',
+                      borderRadius: 10,
+                      border:
+                        travelStyle === s.id
+                          ? '1.5px solid var(--color-primary, #183D32)'
+                          : '1px solid var(--color-divider-gray, #D8D4C7)',
+                      backgroundColor:
+                        travelStyle === s.id
+                          ? 'var(--color-primary, #183D32)'
+                          : '#ffffff',
+                      color:
+                        travelStyle === s.id ? '#ffffff' : 'var(--color-text-primary, #26332E)',
+                      fontWeight: 700,
+                      fontSize: 13,
                       cursor: 'pointer',
-                      textAlign: 'center',
+                      transition: 'all 0.15s ease',
                     }}
                   >
                     {s.label}
@@ -491,14 +825,26 @@ export const CreateTripPage: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ height: 1, backgroundColor: 'var(--color-cloud)', marginBottom: 28 }} />
+          <div style={{ height: 1, backgroundColor: 'var(--color-divider-gray, #D8D4C7)', marginBottom: 28 }} />
 
-          {/* Section 3: Interests Tags */}
-          <div style={{ marginBottom: 28 }}>
-            <h2 className="heading-section" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <Tag size={20} color="var(--color-hopper-blue)" />
-              <span>3. Interests & Activities</span>
+          {/* SECTION 3: INTERESTS & PREFERENCES */}
+          <div style={{ marginBottom: 32 }}>
+            <h2
+              style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontSize: 20,
+                fontWeight: 700,
+                color: 'var(--color-primary, #183D32)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 16,
+              }}
+            >
+              <Tag size={20} color="var(--color-terracotta, #D97745)" />
+              <span>3. Experiences & Trip Highlights</span>
             </h2>
+
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {INTEREST_TAGS.map((tag) => {
                 const isSelected = selectedInterests.includes(tag);
@@ -509,21 +855,26 @@ export const CreateTripPage: React.FC = () => {
                     onClick={() => toggleInterest(tag)}
                     style={{
                       padding: '8px 14px',
-                      borderRadius: 'var(--radius-pills)',
+                      borderRadius: 20,
                       border: isSelected
-                        ? '1px solid var(--color-hopper-blue)'
-                        : '1px solid var(--color-divider-gray)',
-                      backgroundColor: isSelected ? 'var(--color-hopper-blue)' : 'var(--color-cloud)',
-                      color: isSelected ? '#fff' : 'var(--color-ink)',
+                        ? '1.5px solid var(--color-terracotta, #D97745)'
+                        : '1px solid var(--color-divider-gray, #D8D4C7)',
+                      backgroundColor: isSelected
+                        ? 'rgba(217, 119, 69, 0.12)'
+                        : '#ffffff',
+                      color: isSelected
+                        ? 'var(--color-terracotta, #D97745)'
+                        : 'var(--color-text-primary, #26332E)',
                       fontSize: 13,
-                      fontWeight: 600,
+                      fontWeight: isSelected ? 700 : 500,
                       cursor: 'pointer',
-                      display: 'inline-flex',
+                      display: 'flex',
                       alignItems: 'center',
                       gap: 6,
+                      transition: 'all 0.15s ease',
                     }}
                   >
-                    {isSelected && <Check size={13} />}
+                    {isSelected && <Check size={14} />}
                     <span>{tag}</span>
                   </button>
                 );
@@ -531,90 +882,32 @@ export const CreateTripPage: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ height: 1, backgroundColor: 'var(--color-cloud)', marginBottom: 28 }} />
-
-          {/* Section 4: Preferences & Notes */}
-          <div style={{ marginBottom: 28 }}>
-            <h2 className="heading-section" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <FileText size={20} color="var(--color-hopper-blue)" />
-              <span>4. Logistics & Custom Requests</span>
-            </h2>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div className="form-group">
-                <label className="form-label">Transport Preference</label>
-                <select
-                  className="form-select"
-                  value={transportPreference}
-                  onChange={(e) => setTransportPreference(e.target.value)}
-                >
-                  <option value="flight">Flight</option>
-                  <option value="train">Train</option>
-                  <option value="driving">Self Drive / Rental Car</option>
-                  <option value="public transit">Public Transit / Bus</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Accommodation Category</label>
-                <select
-                  className="form-select"
-                  value={accommodationPreference}
-                  onChange={(e) => setAccommodationPreference(e.target.value)}
-                >
-                  <option value="beach resort">Beach Resort / Luxury Hotel</option>
-                  <option value="boutique hotel">Boutique Hotel</option>
-                  <option value="heritage haveli">Heritage Haveli / Homestay</option>
-                  <option value="hostel">Hostel / Guesthouse</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Dietary Preferences</label>
-              <select
-                className="form-select"
-                value={dietaryPreferences}
-                onChange={(e) => setDietaryPreferences(e.target.value)}
-              >
-                <option value="none">No Restrictions</option>
-                <option value="vegetarian">Pure Vegetarian</option>
-                <option value="vegan">Vegan</option>
-                <option value="pescatarian">Pescatarian (Seafood)</option>
-                <option value="halal">Halal</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Additional Requests or Notes</label>
-              <textarea
-                className="form-textarea"
-                rows={3}
-                placeholder="e.g. Planning a romantic sunset dinner at Mandovi river, prefer ground floor stays, want to visit Old Goa churches on Sunday morning..."
-                value={additionalNotes}
-                onChange={(e) => setAdditionalNotes(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="btn-secondary"
-              disabled={isSubmitting}
-            >
-              Cancel
-            </button>
+          {/* SUBMIT BUTTON */}
+          <div style={{ paddingTop: 12 }}>
             <button
               type="submit"
-              className="btn-primary"
-              style={{ padding: '12px 32px', fontSize: 16 }}
               disabled={isSubmitting}
+              style={{
+                width: '100%',
+                padding: '16px 28px',
+                borderRadius: 14,
+                border: 'none',
+                backgroundColor: 'var(--color-primary, #183D32)',
+                color: '#ffffff',
+                fontSize: 16,
+                fontWeight: 800,
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                boxShadow: '0 8px 24px rgba(24, 61, 50, 0.25)',
+                transition: 'opacity 0.2s',
+                opacity: isSubmitting ? 0.7 : 1,
+              }}
             >
-              <Sparkles size={18} />
-              <span>Generate My Itinerary</span>
+              <Sparkles size={20} />
+              <span>{isSubmitting ? 'Synthesizing Itinerary...' : 'Generate AI Travel Itinerary'}</span>
             </button>
           </div>
         </form>
@@ -623,9 +916,7 @@ export const CreateTripPage: React.FC = () => {
       {showAuthModal && (
         <AuthModal
           onClose={() => setShowAuthModal(false)}
-          onSuccess={() => {
-            setShowAuthModal(false);
-          }}
+          defaultMode="login"
         />
       )}
     </div>

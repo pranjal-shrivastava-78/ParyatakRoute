@@ -41,8 +41,8 @@ export const Navbar: React.FC = () => {
               Explore
             </Link>
             <Link
-              to="/create"
-              className={`nav-link-standard ${location.pathname === '/create' || location.pathname === '/trips/create' ? 'active' : ''}`}
+              to="/plan-trip"
+              className={`nav-link-standard ${location.pathname === '/plan-trip' || location.pathname === '/create' || location.pathname === '/trips/create' ? 'active' : ''}`}
             >
               <Sparkles size={16} style={{ display: 'inline', marginRight: 4 }} />
               Plan Trip
