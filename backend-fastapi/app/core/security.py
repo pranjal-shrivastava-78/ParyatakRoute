@@ -77,14 +77,26 @@ def get_current_user(authorization: Optional[str] = Header(None)) -> Authenticat
                             role=getattr(user_res.user, "role", "authenticated") or "authenticated",
                         )
                 raise UnauthorizedException("Unable to verify token signature: JWKS client unavailable", code="INVALID_TOKEN")
-        else:
-            # HS256 symmetric verification
+        elif alg == "HS256":
+            # HS256 symmetric verification (requires SUPABASE_JWT_SECRET)
+            if not settings.SUPABASE_JWT_SECRET:
+                raise UnauthorizedException(
+                    "Symmetric HS256 verification is not configured (SUPABASE_JWT_SECRET is missing)",
+                    code="UNAUTHORIZED",
+                )
             payload = jwt.decode(
                 token,
                 settings.SUPABASE_JWT_SECRET,
                 algorithms=["HS256"],
                 options={"verify_aud": False, "verify_exp": True},
             )
+        else:
+            raise UnauthorizedException(f"Unsupported signing algorithm: '{alg}'", code="INVALID_TOKEN")
+
+        # Validate audience isolation: Supabase user tokens specify aud='authenticated'
+        token_aud = payload.get("aud")
+        if token_aud and token_aud != "authenticated":
+            raise UnauthorizedException(f"Invalid token audience '{token_aud}'. Expected 'authenticated'", code="INVALID_TOKEN")
 
         user_id = payload.get("sub")
         if not user_id:

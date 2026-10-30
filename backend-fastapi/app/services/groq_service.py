@@ -126,28 +126,25 @@ class GroqService:
                 status_code=502,
             )
 
-    async def generate_itinerary(self, preferences: Dict[str, Any], expected_dates: List[str]) -> Dict[str, Any]:
-        """
-        Generate a complete personalized travel itinerary using configured Groq AI model.
-        Sets max_tokens and low temperature for concise, strictly validated output.
-        """
-        client = self.get_client()
+    CHUNK_SIZE = 3
+
+    async def _generate_single_chunk(
+        self,
+        client: AsyncGroq,
+        preferences: Dict[str, Any],
+        expected_dates: List[str],
+        destination: str,
+        currency: str,
+        budget: float,
+        travellers: int,
+        travel_style: str,
+        interests_str: str,
+        starting_city: Optional[str],
+        notes: Optional[str],
+        diet: Optional[str],
+    ) -> Dict[str, Any]:
+        """Generate a complete itinerary in a single API call for short trips (<= 3 days)."""
         total_days = len(expected_dates)
-        destination = preferences.get("destination", "Destination")
-        currency = preferences.get("currency", "INR")
-        budget = preferences.get("budget", 20000)
-        travellers = preferences.get("travellers", 1)
-        travel_style = preferences.get("travel_style", "balanced")
-        interests = preferences.get("interests", [])
-        if isinstance(interests, list):
-            interests_str = ", ".join(str(i) for i in interests) if interests else "sightseeing, culture, food"
-        else:
-            interests_str = str(interests)
-
-        starting_city = preferences.get("starting_city")
-        notes = preferences.get("additional_notes")
-        diet = preferences.get("dietary_preferences")
-
         schedule_guide = "\n".join(f"  - Day {i + 1}: {d}" for i, d in enumerate(expected_dates))
 
         system_prompt = (
@@ -211,12 +208,189 @@ class GroqService:
         raw_content = completion.choices[0].message.content or "{}"
         parsed = self._clean_json_response(raw_content)
 
-        # Validate that days array exists
         if not parsed.get("days") or not isinstance(parsed["days"], list):
             logger.error("[Groq AI] Returned JSON lacks 'days' array")
             raise AppException("AI failed to generate daily itinerary plans", code="AI_MALFORMED_OUTPUT", status_code=502)
 
         return parsed
+
+    async def generate_itinerary(self, preferences: Dict[str, Any], expected_dates: List[str]) -> Dict[str, Any]:
+        """
+        Generate a complete personalized travel itinerary using configured Groq AI model.
+        For itineraries exceeding 3 days, uses chunked multi-day generation to safely stay
+        within Groq completion token ceilings while preserving chronological cohesion.
+        """
+        client = self.get_client()
+        total_days = len(expected_dates)
+        destination = preferences.get("destination", "Destination")
+        currency = preferences.get("currency", "INR")
+        budget = preferences.get("budget", 20000)
+        travellers = preferences.get("travellers", 1)
+        travel_style = preferences.get("travel_style", "balanced")
+        interests = preferences.get("interests", [])
+        if isinstance(interests, list):
+            interests_str = ", ".join(str(i) for i in interests) if interests else "sightseeing, culture, food"
+        else:
+            interests_str = str(interests)
+
+        starting_city = preferences.get("starting_city")
+        notes = preferences.get("additional_notes")
+        diet = preferences.get("dietary_preferences")
+
+        # For itineraries of 3 days or fewer, generate in a single call
+        if total_days <= self.CHUNK_SIZE:
+            return await self._generate_single_chunk(
+                client, preferences, expected_dates, destination, currency,
+                budget, travellers, travel_style, interests_str, starting_city, notes, diet
+            )
+
+        # For longer itineraries (>3 days), perform chunked generation to prevent token truncation
+        logger.info(f"[Groq AI] Initiating chunked generation for {total_days}-day itinerary in batches of {self.CHUNK_SIZE} days")
+        all_days: List[Dict[str, Any]] = []
+        base_title: str = f"Trip to {destination}"
+        base_summary: str = f"A {total_days}-day travel itinerary for {destination}."
+        base_assumptions: List[str] = ["Prices, operating hours, and routes are estimates and must be verified."]
+
+        date_chunks = [
+            expected_dates[i : i + self.CHUNK_SIZE]
+            for i in range(0, total_days, self.CHUNK_SIZE)
+        ]
+
+        day_offset = 1
+        previous_themes: List[str] = []
+
+        for chunk_idx, chunk_dates in enumerate(date_chunks):
+            is_first = (chunk_idx == 0)
+            chunk_day_nums = list(range(day_offset, day_offset + len(chunk_dates)))
+            schedule_guide = "\n".join(f"  - Day {num}: {d}" for num, d in zip(chunk_day_nums, chunk_dates))
+
+            if is_first:
+                system_prompt = (
+                    "You are ParyatakRoute AI, an expert travel planner. "
+                    "Output ONLY valid JSON matching this schema:\n"
+                    "{\n"
+                    '  "title": "string",\n'
+                    '  "summary": "string",\n'
+                    '  "days": [\n'
+                    "    {\n"
+                    f'      "dayNumber": {chunk_day_nums[0]},\n'
+                    '      "date": "YYYY-MM-DD",\n'
+                    '      "theme": "string",\n'
+                    '      "activities": [\n'
+                    "        {\n"
+                    '          "name": "string",\n'
+                    '          "description": "string",\n'
+                    '          "category": "sightseeing | cultural | food | adventure | leisure | transport",\n'
+                    '          "startTime": "09:00",\n'
+                    '          "durationMinutes": 120,\n'
+                    '          "estimatedCost": 500,\n'
+                    f'          "costCurrency": "{currency}",\n'
+                    '          "location": {"name": "string", "latitude": null, "longitude": null},\n'
+                    '          "transport": {"mode": "string", "details": "string", "durationMinutes": 15, "estimatedCost": 100},\n'
+                    '          "sourceStatus": "unverified"\n'
+                    "        }\n"
+                    "      ]\n"
+                    "    }\n"
+                    "  ],\n"
+                    "  \"assumptions\": [\"Prices, operating hours, and routes are estimates and must be verified.\"]\n"
+                    "}"
+                )
+                user_prompt = (
+                    f"Generate the first {len(chunk_dates)} days (Day {chunk_day_nums[0]} to Day {chunk_day_nums[-1]}) of a {total_days}-day travel itinerary for {destination}.\n"
+                    f"Dates:\n{schedule_guide}\n"
+                    f"Budget: {currency} {budget} | Travellers: {travellers} | Style: {travel_style}\n"
+                    f"Interests: {interests_str}\n"
+                    f"{f'Origin: {starting_city}' if starting_city else ''}\n"
+                    f"{f'Dietary: {diet}' if diet else ''}\n"
+                    f"{f'Special Notes: {notes}' if notes else ''}\n"
+                    f"Rules: Exactly {len(chunk_dates)} days numbered {chunk_day_nums[0]} to {chunk_day_nums[-1]}. Sequential non-overlapping activities. Output valid JSON object."
+                )
+            else:
+                system_prompt = (
+                    "You are ParyatakRoute AI, an expert travel planner. "
+                    "Output ONLY valid JSON matching this schema:\n"
+                    "{\n"
+                    '  "days": [\n'
+                    "    {\n"
+                    f'      "dayNumber": {chunk_day_nums[0]},\n'
+                    '      "date": "YYYY-MM-DD",\n'
+                    '      "theme": "string",\n'
+                    '      "activities": [\n'
+                    "        {\n"
+                    '          "name": "string",\n'
+                    '          "description": "string",\n'
+                    '          "category": "sightseeing | cultural | food | adventure | leisure | transport",\n'
+                    '          "startTime": "09:00",\n'
+                    '          "durationMinutes": 120,\n'
+                    '          "estimatedCost": 500,\n'
+                    f'          "costCurrency": "{currency}",\n'
+                    '          "location": {"name": "string", "latitude": null, "longitude": null},\n'
+                    '          "transport": {"mode": "string", "details": "string", "durationMinutes": 15, "estimatedCost": 100},\n'
+                    '          "sourceStatus": "unverified"\n'
+                    "        }\n"
+                    "      ]\n"
+                    "    }\n"
+                    "  ]\n"
+                    "}"
+                )
+                prev_context = "; ".join(previous_themes) if previous_themes else "Initial exploration"
+                user_prompt = (
+                    f"Continue the travel itinerary '{base_title}' for {destination}.\n"
+                    f"Previous days covered: {prev_context}.\n"
+                    f"Generate schedule for Day {chunk_day_nums[0]} to Day {chunk_day_nums[-1]}.\n"
+                    f"Dates:\n{schedule_guide}\n"
+                    f"Style: {travel_style} | Interests: {interests_str}\n"
+                    f"Rules: Exactly {len(chunk_dates)} days numbered {chunk_day_nums[0]} to {chunk_day_nums[-1]}. Sequential non-overlapping activities. Output valid JSON with 'days' array."
+                )
+
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ]
+
+            logger.info(f"[Groq AI] Requesting chunk {chunk_idx + 1}/{len(date_chunks)} (Days {chunk_day_nums[0]}-{chunk_day_nums[-1]}) for {destination}")
+
+            completion = await self._call_with_retry(
+                client.chat.completions.create,
+                model=self.primary_model,
+                messages=messages,
+                response_format={"type": "json_object"},
+                temperature=0.4,
+                max_tokens=3000,
+            )
+
+            raw_content = completion.choices[0].message.content or "{}"
+            parsed = self._clean_json_response(raw_content)
+
+            chunk_days = parsed.get("days", [])
+            if not isinstance(chunk_days, list) or len(chunk_days) == 0:
+                logger.error(f"[Groq AI] Chunk {chunk_idx + 1} returned no days")
+                raise AppException(
+                    f"AI failed to generate days {chunk_day_nums[0]}-{chunk_day_nums[-1]} in chunked generation",
+                    code="AI_MALFORMED_OUTPUT",
+                    status_code=502,
+                )
+
+            if is_first:
+                base_title = parsed.get("title", base_title)
+                base_summary = parsed.get("summary", base_summary)
+                if parsed.get("assumptions"):
+                    base_assumptions = parsed["assumptions"]
+
+            for day_item in chunk_days:
+                theme = day_item.get("theme", "")
+                if theme:
+                    previous_themes.append(f"Day {day_item.get('dayNumber')}: {theme}")
+                all_days.append(day_item)
+
+            day_offset += len(chunk_dates)
+
+        return {
+            "title": base_title,
+            "summary": base_summary,
+            "days": all_days,
+            "assumptions": base_assumptions,
+        }
 
     async def regenerate_single_day(
         self,

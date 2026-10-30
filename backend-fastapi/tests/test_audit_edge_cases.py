@@ -238,3 +238,179 @@ def test_travel_data_directions_missing_coordinates(client: TestClient, auth_hea
     )
     assert res.status_code in (400, 422)
     assert res.json()["success"] is False
+
+
+def test_jwt_invalid_audience_rejected(client: TestClient):
+    """Tokens with an unauthorized audience (e.g. 'anon') must be rejected."""
+    import jwt
+    import time
+    token = jwt.encode(
+        {"sub": "00000000-0000-0000-0000-000000000001", "aud": "anon", "exp": int(time.time()) + 3600},
+        settings.SUPABASE_JWT_SECRET,
+        algorithm="HS256",
+    )
+    res = client.get("/api/v1/trips", headers={"Authorization": f"Bearer {token}"})
+    assert res.status_code == 401
+    assert "audience" in res.json()["error"]["message"].lower()
+
+
+def test_jwt_missing_secret_rejects_hs256(client: TestClient, auth_headers_user_a: dict[str, str]):
+    """If SUPABASE_JWT_SECRET is empty/missing, HS256 tokens are rejected safely."""
+    with patch.object(settings, "SUPABASE_JWT_SECRET", ""):
+        res = client.get("/api/v1/trips", headers=auth_headers_user_a)
+        assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_long_itinerary_chunked_generation_ordering_and_budget(client: TestClient, auth_headers_user_a: dict[str, str]):
+    """Verify that multi-day itineraries (>3 days) use chunking and preserve chronological order and budget."""
+    from unittest.mock import AsyncMock
+    from app.services.groq_service import groq_service
+
+    # Create a 5-day trip
+    trip_res = client.post(
+        "/api/v1/trips",
+        json={
+            "destination": "Ladakh, India",
+            "start_date": "2026-07-01",
+            "end_date": "2026-07-05",  # 5 days
+            "budget": 50000,
+            "currency": "INR",
+        },
+        headers=auth_headers_user_a,
+    )
+    assert trip_res.status_code == 201
+    trip_id = trip_res.json()["data"]["id"]
+
+    chunk_1 = {
+        "title": "Ladakh High Altitude Adventure",
+        "summary": "5 days exploring Leh and surrounding valleys",
+        "days": [
+            {
+                "dayNumber": 1,
+                "date": "2026-07-01",
+                "theme": "Leh Acclimatization",
+                "activities": [{"name": "Rest & Tea", "estimatedCost": 500, "category": "food", "startTime": "10:00", "durationMinutes": 60}],
+            },
+            {
+                "dayNumber": 2,
+                "date": "2026-07-02",
+                "theme": "Monasteries",
+                "activities": [{"name": "Thiksey Monastery", "estimatedCost": 300, "category": "cultural", "startTime": "10:00", "durationMinutes": 120}],
+            },
+            {
+                "dayNumber": 3,
+                "date": "2026-07-03",
+                "theme": "Shanti Stupa Sunset",
+                "activities": [{"name": "Shanti Stupa", "estimatedCost": 100, "category": "sightseeing", "startTime": "17:00", "durationMinutes": 90}],
+            },
+        ],
+        "assumptions": ["Acclimatization is essential on Day 1."],
+    }
+
+    chunk_2 = {
+        "days": [
+            {
+                "dayNumber": 4,
+                "date": "2026-07-04",
+                "theme": "Nubra Valley via Khardung La",
+                "activities": [{"name": "Khardung La Pass", "estimatedCost": 2000, "category": "adventure", "startTime": "08:00", "durationMinutes": 240}],
+            },
+            {
+                "dayNumber": 5,
+                "date": "2026-07-05",
+                "theme": "Pangong Lake & Return",
+                "activities": [{"name": "Pangong Tso", "estimatedCost": 2500, "category": "sightseeing", "startTime": "09:00", "durationMinutes": 180}],
+            },
+        ]
+    }
+
+    with patch.object(groq_service, "_call_with_retry", new_callable=AsyncMock) as mock_call:
+        # Mock choice response from Groq for each chunk
+        mock_choice_1 = MagicMock()
+        mock_choice_1.message.content = __import__("json").dumps(chunk_1)
+        mock_completion_1 = MagicMock(choices=[mock_choice_1])
+
+        mock_choice_2 = MagicMock()
+        mock_choice_2.message.content = __import__("json").dumps(chunk_2)
+        mock_completion_2 = MagicMock(choices=[mock_choice_2])
+
+        mock_call.side_effect = [mock_completion_1, mock_completion_2]
+
+        gen_res = client.post(
+            "/api/v1/itineraries/generate",
+            json={"trip_id": trip_id},
+            headers=auth_headers_user_a,
+        )
+        assert gen_res.status_code == 201
+        data = gen_res.json()["data"]
+
+        # 1. Verify 2 chunk calls were made
+        assert mock_call.call_count == 2
+
+        # 2. Verify all 5 days are present and properly numbered
+        assert len(data["days"]) == 5
+        for idx, day in enumerate(data["days"]):
+            day_num = day.get("dayNumber") or day.get("day_number")
+            assert day_num == idx + 1
+            assert day["date"] == f"2026-07-0{idx + 1}"
+
+        # 3. Verify budget recalculation: 500 + 300 + 100 + 2000 + 2500 = 5400
+        assert data["budget"]["total_estimated"] == 5400.0
+
+
+@pytest.mark.asyncio
+async def test_long_itinerary_failed_chunk_does_not_persist(client: TestClient, auth_headers_user_a: dict[str, str]):
+    """If a subsequent chunk fails during multi-day generation, no partial database record is saved."""
+    from unittest.mock import AsyncMock
+    from app.core.exceptions import AppException
+    from app.services.groq_service import groq_service
+    from app.repositories.itinerary_repository import itinerary_repository
+
+    trip_res = client.post(
+        "/api/v1/trips",
+        json={
+            "destination": "Sikkim, India",
+            "start_date": "2026-08-01",
+            "end_date": "2026-08-06",  # 6 days -> 2 chunks of 3 days
+            "budget": 35000,
+            "currency": "INR",
+        },
+        headers=auth_headers_user_a,
+    )
+    assert trip_res.status_code == 201
+    trip_id = trip_res.json()["data"]["id"]
+
+    chunk_1 = {
+        "title": "Sikkim Monasteries",
+        "summary": "Exploring Gangtok and Pelling",
+        "days": [
+            {"dayNumber": 1, "date": "2026-08-01", "theme": "Gangtok Arrival", "activities": []},
+            {"dayNumber": 2, "date": "2026-08-02", "theme": "Rumtek Monastery", "activities": []},
+            {"dayNumber": 3, "date": "2026-08-03", "theme": "Tsomgo Lake", "activities": []},
+        ],
+    }
+
+    with patch.object(groq_service, "_call_with_retry", new_callable=AsyncMock) as mock_call:
+        mock_choice_1 = MagicMock()
+        mock_choice_1.message.content = __import__("json").dumps(chunk_1)
+        mock_completion_1 = MagicMock(choices=[mock_choice_1])
+
+        # Chunk 2 fails with a controlled AI provider error
+        mock_call.side_effect = [
+            mock_completion_1,
+            AppException("Groq API rate limit or outage on chunk 2", code="AI_PROVIDER_ERROR", status_code=502),
+        ]
+
+        gen_res = client.post(
+            "/api/v1/itineraries/generate",
+            json={"trip_id": trip_id},
+            headers=auth_headers_user_a,
+        )
+        assert gen_res.status_code == 502
+        assert gen_res.json()["error"]["code"] == "AI_PROVIDER_ERROR"
+
+        # CRITICAL VERIFICATION: No partial itinerary was persisted in the repository!
+        saved_itins = await itinerary_repository.list_by_trip(trip_id)
+        assert len(saved_itins) == 0
+
