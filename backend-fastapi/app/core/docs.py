@@ -5,7 +5,7 @@ and logical tag grouping for the interactive API documentation at /docs.
 """
 from fastapi.responses import HTMLResponse
 
-PARYATAK_FAVICON_SVG = """data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="%230F172A"/><path d="M16 4L20 12L28 16L20 20L16 28L12 20L4 16L12 12L16 4Z" fill="%2310B981"/><circle cx="16" cy="16" r="3" fill="%236366F1"/></svg>"""
+PARYATAK_FAVICON_SVG = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0 0 32 32'%20fill='none'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%230F172A'/%3E%3Cpath%20d='M16%204L20%2012L28%2016L20%2020L16%2028L12%2020L4%2016L12%2012L16%204Z'%20fill='%2310B981'/%3E%3Ccircle%20cx='16'%20cy='16'%20r='3'%20fill='%236366F1'/%3E%3C/svg%3E"
 
 OPENAPI_DESCRIPTION = """
 ### Personalized Travel Itinerary Planning Engine & Geospatial Backend
@@ -569,31 +569,34 @@ def get_paryatak_swagger_ui_html() -> HTMLResponse:
 
     <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
     <script>
-        window.onload = () => {{
-            window.ui = SwaggerUIBundle({{
-                url: '/openapi.json',
-                dom_id: '#swagger-ui',
-                layout: 'BaseLayout',
-                deepLinking: true,
-                filter: true,
-                docExpansion: 'list',
-                defaultModelsExpandDepth: 1,
-                defaultModelExpandDepth: 1,
-                displayRequestDuration: true,
-                showCommonExtensions: true,
-                tryItOutEnabled: true,
-                persistAuthorization: true,
-                syntaxHighlight: {{
-                    theme: 'monokai'
-                }},
-                presets: [
-                    SwaggerUIBundle.presets.apis,
-                    SwaggerUIBundle.SwaggerUIStandalonePreset
-                ]
-            }});
-        }};
+        const ui = SwaggerUIBundle({{
+            url: '/openapi.json',
+            dom_id: '#swagger-ui',
+            layout: 'BaseLayout',
+            deepLinking: true,
+            filter: true,
+            docExpansion: 'list',
+            defaultModelsExpandDepth: 1,
+            defaultModelExpandDepth: 1,
+            displayRequestDuration: true,
+            showCommonExtensions: true,
+            tryItOutEnabled: true,
+            persistAuthorization: true,
+            syntaxHighlight: {{
+                theme: 'monokai'
+            }},
+            presets: [
+                SwaggerUIBundle.presets.apis,
+                SwaggerUIBundle.SwaggerUIStandalonePreset
+            ]
+        }});
+        window.ui = ui;
     </script>
 </body>
 </html>
 """
-    return HTMLResponse(content=html_content)
+    response = HTMLResponse(content=html_content)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response

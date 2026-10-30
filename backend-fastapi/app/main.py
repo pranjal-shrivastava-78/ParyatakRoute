@@ -31,16 +31,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("ParyatakRoute FastAPI backend shutting down")
 
 
-from fastapi.openapi.docs import get_swagger_ui_oauth2_redirect_html
-from app.core.docs import OPENAPI_DESCRIPTION, OPENAPI_TAGS, get_paryatak_swagger_ui_html
+from fastapi import Request, Response
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_oauth2_redirect_html
+from app.core.docs import OPENAPI_DESCRIPTION, OPENAPI_TAGS, PARYATAK_FAVICON_SVG, get_paryatak_swagger_ui_html
 
 app = FastAPI(
     title="ParyatakRoute API",
     summary="Intelligent Travel Itinerary Planner & Real-Time Geospatial Engine",
     description=OPENAPI_DESCRIPTION,
     version="1.0.0",
-    docs_url=None,  # Custom Swagger UI handler mounted at /docs
-    redoc_url="/redoc",
+    docs_url=None,   # Custom Swagger UI handler mounted at /docs
+    redoc_url=None,  # Custom ReDoc handler mounted at /redoc
     openapi_tags=OPENAPI_TAGS,
     lifespan=lifespan,
     contact={
@@ -53,10 +54,39 @@ app = FastAPI(
 )
 
 
+@app.middleware("http")
+async def add_documentation_cache_control_headers(request: Request, call_next) -> Response:
+    """Ensures documentation routes (/docs, /redoc, /openapi.json) are never cached by browsers or CDN."""
+    response = await call_next(request)
+    if request.url.path in ("/docs", "/docs/", "/redoc", "/redoc/", "/openapi.json"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
+
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui() -> HTMLResponse:
     """Renders the custom branded ParyatakRoute Swagger UI documentation."""
-    return get_paryatak_swagger_ui_html()
+    response = get_paryatak_swagger_ui_html()
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
+@app.get("/redoc", include_in_schema=False)
+async def custom_redoc_ui() -> HTMLResponse:
+    """Renders ReDoc documentation with custom favicon and no-cache headers."""
+    response = get_redoc_html(
+        openapi_url="/openapi.json",
+        title="ParyatakRoute API Reference - ReDoc",
+        redoc_favicon_url=PARYATAK_FAVICON_SVG,
+    )
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 @app.get("/docs/oauth2-redirect", include_in_schema=False)
