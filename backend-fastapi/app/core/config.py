@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     )
 
     # Supabase Credentials
-    SUPABASE_URL: str = Field(default="https://ygfksgxttlcwaruzwoch.supabase.co")
+    SUPABASE_URL: str = Field(default="")
     SUPABASE_PUBLISHABLE_KEY: str = Field(default="")
     SUPABASE_SERVICE_ROLE_KEY: str = Field(default="")
     SUPABASE_JWT_SECRET: str = Field(default="dev-supabase-jwt-secret-for-testing-only-32chars")

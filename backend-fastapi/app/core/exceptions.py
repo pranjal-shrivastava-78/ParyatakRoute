@@ -61,9 +61,24 @@ def app_exception_handler(_request: Request, exc: AppException) -> JSONResponse:
 
 def validation_exception_handler(_request: Request, exc: RequestValidationError) -> JSONResponse:
     details = []
+    clean_errors = []
     for err in exc.errors():
-        loc = ".".join(str(p) for p in err["loc"] if p != "body")
-        details.append(f"{loc}: {err['msg']}")
+        loc = ".".join(str(p) for p in err.get("loc", []) if p != "body")
+        msg = err.get("msg", "")
+        details.append(f"{loc}: {msg}" if loc else msg)
+        clean_err = {
+            "type": err.get("type", "value_error"),
+            "loc": [str(p) for p in err.get("loc", [])],
+            "msg": msg,
+        }
+        if "input" in err:
+            try:
+                import json
+                json.dumps(err["input"])
+                clean_err["input"] = err["input"]
+            except (TypeError, OverflowError):
+                clean_err["input"] = str(err["input"])
+        clean_errors.append(clean_err)
 
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
@@ -72,7 +87,7 @@ def validation_exception_handler(_request: Request, exc: RequestValidationError)
             "error": {
                 "code": "VALIDATION_ERROR",
                 "message": "; ".join(details) or "Request validation failed",
-                "details": exc.errors(),
+                "details": clean_errors,
             },
         },
     )

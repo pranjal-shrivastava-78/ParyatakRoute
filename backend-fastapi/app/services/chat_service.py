@@ -1,6 +1,6 @@
 """Chat Service for ParyatakRoute Travel Assistant.
 
-Provides context-aware conversational AI powered by Groq's llama-3.1-8b-instant,
+Provides context-aware conversational AI powered by Groq AI,
 with trip/itinerary context pruning and strict user ownership verification.
 """
 from datetime import datetime, timezone

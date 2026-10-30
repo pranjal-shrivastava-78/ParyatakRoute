@@ -1,8 +1,8 @@
 """Groq AI Service for ParyatakRoute.
 
 Integrates with Groq Cloud API using:
-- `llama-3.3-70b-versatile` for high-precision structured JSON itinerary generation
-- `llama-3.1-8b-instant` for ultra-fast, low-token conversational travel assistance
+- Configured GROQ_MODEL for high-precision structured JSON itinerary generation
+- Configured GROQ_CHAT_MODEL for ultra-fast, low-token conversational travel assistance
 Includes token conservation, bounded retries with jitter, and schema validation.
 """
 import asyncio
@@ -128,7 +128,7 @@ class GroqService:
 
     async def generate_itinerary(self, preferences: Dict[str, Any], expected_dates: List[str]) -> Dict[str, Any]:
         """
-        Generate a complete personalized travel itinerary using llama-3.3-70b-versatile.
+        Generate a complete personalized travel itinerary using configured Groq AI model.
         Sets max_tokens and low temperature for concise, strictly validated output.
         """
         client = self.get_client()
@@ -231,7 +231,7 @@ class GroqService:
         context: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
-        Surgically regenerate ONLY Day N using llama-3.3-70b-versatile.
+        Surgically regenerate ONLY Day N using configured GROQ_MODEL.
         Saves ~78% tokens compared to full trip regeneration.
         """
         client = self.get_client()
@@ -299,7 +299,7 @@ class GroqService:
         history: Optional[List[Dict[str, str]]] = None,
     ) -> str:
         """
-        Conduct conversational travel inquiry using ultra-fast llama-3.1-8b-instant.
+        Conduct conversational travel inquiry using configured GROQ_CHAT_MODEL.
         Output token limit is strictly capped at 800 tokens.
         """
         client = self.get_client()

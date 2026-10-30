@@ -1,6 +1,6 @@
 """Chat API routes for ParyatakRoute.
 
-Provides conversational AI travel assistant powered by Groq llama-3.1-8b-instant
+Provides conversational AI travel assistant powered by Groq AI
 with journey context awareness and strict ownership verification.
 """
 from fastapi import APIRouter, Depends, status
