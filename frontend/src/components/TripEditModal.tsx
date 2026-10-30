@@ -58,7 +58,7 @@ export const TripEditModal: React.FC<TripEditModalProps> = ({
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-surface" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 540, padding: 28 }}>
+      <div className="modal-surface" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 540, padding: 'clamp(18px, 4.5vw, 28px)' }}>
         <button
           onClick={onClose}
           style={{

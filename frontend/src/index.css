@@ -116,18 +116,24 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+  position: relative;
+  width: 100%;
 }
 
 #root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 a {
@@ -208,31 +214,32 @@ h1, h2, h3, h4, h5, h6,
   max-width: 1240px;
   margin-left: auto;
   margin-right: auto;
-  padding-left: var(--spacing-20);
-  padding-right: var(--spacing-20);
+  padding-left: clamp(14px, 3.5vw, 24px);
+  padding-right: clamp(14px, 3.5vw, 24px);
 }
 
 .main-content {
   flex: 1 0 auto;
+  width: 100%;
 }
 
 /* Section bands */
 .section-white {
   background-color: var(--color-bg-main);
-  padding-top: var(--spacing-48);
-  padding-bottom: var(--spacing-48);
+  padding-top: clamp(28px, 5vw, 48px);
+  padding-bottom: clamp(28px, 5vw, 48px);
 }
 
 .section-cloud {
   background-color: var(--color-bg-secondary);
-  padding-top: var(--spacing-48);
-  padding-bottom: var(--spacing-48);
+  padding-top: clamp(28px, 5vw, 48px);
+  padding-bottom: clamp(28px, 5vw, 48px);
 }
 
 .section-mist {
   background-color: var(--surface-mist-band);
-  padding-top: var(--spacing-48);
-  padding-bottom: var(--spacing-48);
+  padding-top: clamp(28px, 5vw, 48px);
+  padding-bottom: clamp(28px, 5vw, 48px);
 }
 
 /* ==========================================================================
@@ -484,13 +491,14 @@ h1, h2, h3, h4, h5, h6,
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(17, 17, 17, 0.5);
-  backdrop-filter: blur(4px);
+  background-color: rgba(17, 17, 17, 0.6);
+  backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: var(--spacing-16);
+  z-index: 1100;
+  padding: clamp(10px, 3vw, 20px);
+  overflow-y: auto;
 }
 
 .modal-surface {
@@ -498,11 +506,12 @@ h1, h2, h3, h4, h5, h6,
   border-radius: var(--radius-cards);
   width: 100%;
   max-width: 540px;
-  max-height: 90vh;
+  max-height: calc(100vh - 32px);
   overflow-y: auto;
   border: 1px solid var(--color-divider-gray);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
   position: relative;
+  margin: auto;
 }
 
 /* ==========================================================================

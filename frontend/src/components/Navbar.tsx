@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Home,
-  Compass,
   MapPin,
   Calendar,
   Heart,
@@ -25,6 +24,22 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Close mobile menu if window resizes to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 900) {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <>
@@ -79,9 +94,9 @@ export const Navbar: React.FC = () => {
           </nav>
 
           {/* Right Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-12)' }}>
+          <div className="app-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-12)' }}>
             {isAuthenticated ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-8)' }}>
+              <div className="nav-actions-desktop" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-8)' }}>
                 <Link to="/profile" className="btn-secondary" style={{ padding: '7px 16px', fontSize: 14 }}>
                   <User size={15} />
                   <span>{user?.name?.split(' ')[0] || 'Account'}</span>
@@ -96,7 +111,7 @@ export const Navbar: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-8)' }}>
+              <div className="nav-actions-desktop" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-8)' }}>
                 <Link
                   to="/login"
                   className="btn-secondary"
@@ -117,132 +132,156 @@ export const Navbar: React.FC = () => {
             {/* Mobile Hamburger Button */}
             <button
               type="button"
-              className="btn-circle-utility"
-              style={{
-                display: 'none',
-                color: 'var(--color-ink)',
-                borderColor: 'var(--color-divider-gray)',
-              }}
+              className={`mobile-hamburger-btn ${mobileMenuOpen ? 'menu-open' : ''}`}
               id="mobile-nav-toggle"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Toggle navigation menu"
+              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={mobileMenuOpen}
             >
-              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              <span className="hamburger-icon-wrapper">
+                {mobileMenuOpen ? (
+                  <X size={22} strokeWidth={2.3} className="hamburger-icon icon-close" />
+                ) : (
+                  <Menu size={22} strokeWidth={2.3} className="hamburger-icon icon-menu" />
+                )}
+              </span>
             </button>
           </div>
         </div>
 
-        {/* Mobile Dropdown Menu */}
+        {/* Mobile Dropdown Menu with Backdrop */}
         {mobileMenuOpen && (
-          <div
-            style={{
-              backgroundColor: 'var(--surface-white-canvas)',
-              borderBottom: '1px solid var(--color-divider-gray)',
-              padding: 'var(--spacing-16)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--spacing-12)',
-            }}
-          >
-            <Link
-              to="/"
+          <>
+            <div
+              className="mobile-nav-backdrop"
               onClick={closeMobileMenu}
-              className={`nav-link-standard ${location.pathname === '/' ? 'active' : ''}`}
-              style={{ padding: '10px 14px' }}
-            >
-              <Home size={16} style={{ display: 'inline', marginRight: 8 }} />
-              Home
-            </Link>
-            <Link
-              to="/explore"
-              onClick={closeMobileMenu}
-              className={`nav-link-standard ${location.pathname === '/explore' ? 'active' : ''}`}
-              style={{ padding: '10px 14px' }}
-            >
-              <MapPin size={16} style={{ display: 'inline', marginRight: 8 }} />
-              Explore
-            </Link>
-            <Link
-              to="/plan-trip"
-              onClick={closeMobileMenu}
-              className={`nav-link-standard ${location.pathname === '/plan-trip' || location.pathname === '/create' ? 'active' : ''}`}
-              style={{ padding: '10px 14px' }}
-            >
-              <Sparkles size={16} style={{ display: 'inline', marginRight: 8 }} />
-              Plan Trip
-            </Link>
-            <Link
-              to="/chat"
-              onClick={closeMobileMenu}
-              className={`nav-link-standard ${location.pathname === '/chat' ? 'active' : ''}`}
-              style={{ padding: '10px 14px' }}
-            >
-              <MessageSquare size={16} style={{ display: 'inline', marginRight: 8 }} />
-              AI Assistant
-            </Link>
-            <Link
-              to="/trips"
-              onClick={closeMobileMenu}
-              className={`nav-link-standard ${location.pathname.startsWith('/trips') ? 'active' : ''}`}
-              style={{ padding: '10px 14px' }}
-            >
-              <Calendar size={16} style={{ display: 'inline', marginRight: 8 }} />
-              My Trips
-            </Link>
-            <Link
-              to="/saved"
-              onClick={closeMobileMenu}
-              className={`nav-link-standard ${location.pathname === '/saved' || location.pathname === '/favourites' ? 'active' : ''}`}
-              style={{ padding: '10px 14px' }}
-            >
-              <Heart size={16} style={{ display: 'inline', marginRight: 8 }} />
-              Saved
-            </Link>
-            {isAuthenticated ? (
-              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                <Link
-                  to="/profile"
-                  onClick={closeMobileMenu}
-                  className="btn-secondary"
-                  style={{ flex: 1, textAlign: 'center', padding: '10px' }}
-                >
-                  <User size={16} style={{ display: 'inline', marginRight: 6 }} />
-                  Profile
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    logout();
-                    closeMobileMenu();
-                  }}
-                  className="btn-secondary"
-                  style={{ padding: '10px 14px' }}
-                  title="Sign out"
-                >
-                  <LogOut size={16} />
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                <Link
-                  to="/login"
-                  onClick={closeMobileMenu}
-                  className="btn-secondary"
-                  style={{ flex: 1, textAlign: 'center', padding: '10px' }}
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/register"
-                  onClick={closeMobileMenu}
-                  className="btn-primary"
-                  style={{ flex: 1, textAlign: 'center', padding: '10px' }}
-                >
-                  Register
-                </Link>
-              </div>
-            )}
-          </div>
+              aria-hidden="true"
+            />
+            <div className="mobile-nav-panel">
+              <Link
+                to="/"
+                onClick={closeMobileMenu}
+                className={`mobile-nav-link ${location.pathname === '/' ? 'active' : ''}`}
+              >
+                <Home size={18} />
+                <span>Home</span>
+              </Link>
+              <Link
+                to="/explore"
+                onClick={closeMobileMenu}
+                className={`mobile-nav-link ${location.pathname === '/explore' ? 'active' : ''}`}
+              >
+                <MapPin size={18} />
+                <span>Explore</span>
+              </Link>
+              <Link
+                to="/plan-trip"
+                onClick={closeMobileMenu}
+                className={`mobile-nav-link ${location.pathname === '/plan-trip' || location.pathname === '/create' ? 'active' : ''}`}
+              >
+                <Sparkles size={18} />
+                <span>Plan Trip</span>
+              </Link>
+              <Link
+                to="/chat"
+                onClick={closeMobileMenu}
+                className={`mobile-nav-link ${location.pathname === '/chat' ? 'active' : ''}`}
+              >
+                <MessageSquare size={18} />
+                <span>AI Assistant</span>
+              </Link>
+              <Link
+                to="/trips"
+                onClick={closeMobileMenu}
+                className={`mobile-nav-link ${location.pathname.startsWith('/trips') ? 'active' : ''}`}
+              >
+                <Calendar size={18} />
+                <span>My Trips</span>
+              </Link>
+              <Link
+                to="/saved"
+                onClick={closeMobileMenu}
+                className={`mobile-nav-link ${location.pathname === '/saved' || location.pathname === '/favourites' ? 'active' : ''}`}
+              >
+                <Heart size={18} />
+                <span>Saved</span>
+              </Link>
+
+              <div className="mobile-nav-divider" />
+
+              {isAuthenticated ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <Link
+                    to="/profile"
+                    onClick={closeMobileMenu}
+                    className="btn-secondary"
+                    style={{
+                      width: '100%',
+                      justifyContent: 'center',
+                      padding: '12px',
+                      fontSize: 15,
+                      fontWeight: 600,
+                    }}
+                  >
+                    <User size={16} />
+                    <span>My Profile ({user?.name?.split(' ')[0] || 'Account'})</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logout();
+                      closeMobileMenu();
+                    }}
+                    className="btn-secondary"
+                    style={{
+                      width: '100%',
+                      justifyContent: 'center',
+                      padding: '12px',
+                      fontSize: 15,
+                      color: 'var(--color-danger, #D9383A)',
+                      borderColor: 'rgba(217, 56, 58, 0.3)',
+                    }}
+                  >
+                    <LogOut size={16} />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <Link
+                    to="/login"
+                    onClick={closeMobileMenu}
+                    className="btn-secondary"
+                    style={{
+                      width: '100%',
+                      justifyContent: 'center',
+                      padding: '12px',
+                      fontSize: 15,
+                      fontWeight: 600,
+                    }}
+                  >
+                    <LogIn size={16} />
+                    <span>Sign In</span>
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={closeMobileMenu}
+                    className="btn-primary"
+                    style={{
+                      width: '100%',
+                      justifyContent: 'center',
+                      padding: '12px',
+                      fontSize: 15,
+                      fontWeight: 600,
+                    }}
+                  >
+                    <Sparkles size={16} />
+                    <span>Join Free</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </header>
 

@@ -232,7 +232,7 @@ export const CreateTripPage: React.FC = () => {
       style={{
         backgroundColor: 'var(--color-bg-main, #F7F5EF)',
         minHeight: '100vh',
-        padding: '48px 24px 80px 24px',
+        padding: 'clamp(24px, 4vw, 48px) clamp(12px, 3.5vw, 24px) 80px clamp(12px, 3.5vw, 24px)',
       }}
     >
       <div style={{ maxWidth: 840, margin: '0 auto' }}>
@@ -413,7 +413,7 @@ export const CreateTripPage: React.FC = () => {
             backgroundColor: '#ffffff',
             border: '1px solid var(--color-divider-gray, #D8D4C7)',
             borderRadius: 24,
-            padding: '36px 32px',
+            padding: 'clamp(20px, 4vw, 36px) clamp(14px, 4vw, 32px)',
             boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
           }}
         >
@@ -435,7 +435,7 @@ export const CreateTripPage: React.FC = () => {
               <span>1. Destination & Duration</span>
             </h2>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 16 }}>
               {/* Intelligent Destination Autocomplete */}
               <div className="form-group">
                 <label
@@ -502,7 +502,7 @@ export const CreateTripPage: React.FC = () => {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
                 gap: 16,
                 marginTop: 16,
               }}
@@ -585,7 +585,7 @@ export const CreateTripPage: React.FC = () => {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
                 gap: 14,
               }}
             >
@@ -869,7 +869,7 @@ export const CreateTripPage: React.FC = () => {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
                 gap: 16,
               }}
             >
@@ -1030,7 +1030,7 @@ export const CreateTripPage: React.FC = () => {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 120px), 1fr))',
                   gap: 10,
                 }}
               >

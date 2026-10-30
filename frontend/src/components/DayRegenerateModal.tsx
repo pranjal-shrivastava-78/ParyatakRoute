@@ -55,7 +55,7 @@ export const DayRegenerateModal: React.FC<DayRegenerateModalProps> = ({
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-surface" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520, padding: 28 }}>
+      <div className="modal-surface" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520, padding: 'clamp(18px, 4.5vw, 28px)' }}>
         <button
           onClick={onClose}
           style={{

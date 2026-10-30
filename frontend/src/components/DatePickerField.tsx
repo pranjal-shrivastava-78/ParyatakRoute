@@ -257,11 +257,12 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
             backgroundColor: '#ffffff',
             border: '1px solid var(--color-divider-gray, #D8D4C7)',
             borderRadius: 16,
-            padding: 16,
+            padding: 14,
             boxShadow: '0 12px 28px rgba(24, 61, 50, 0.16), 0 4px 10px rgba(0,0,0,0.04)',
             zIndex: 110,
-            width: 290,
-            minWidth: 280,
+            width: 'min(290px, calc(100vw - 32px))',
+            maxWidth: 'calc(100vw - 32px)',
+            boxSizing: 'border-box',
           }}
         >
           {/* Header with Navigation */}

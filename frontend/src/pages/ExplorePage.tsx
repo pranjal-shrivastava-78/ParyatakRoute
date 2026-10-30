@@ -593,7 +593,7 @@ export const ExplorePage: React.FC = () => {
             padding: 20,
             boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
             display: showFiltersDrawer ? 'grid' : 'none',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
             gap: 16,
           }}
           className={`advanced-filters-panel ${showFiltersDrawer ? 'is-open' : ''}`}
@@ -1034,14 +1034,14 @@ export const ExplorePage: React.FC = () => {
         style={{
           maxWidth: 1240,
           margin: '0 auto',
-          padding: '0 24px',
+          padding: '0 clamp(12px, 3.5vw, 24px)',
         }}
       >
         {filteredDestinations.length > 0 ? (
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 270px), 1fr))',
               gap: 24,
             }}
           >
@@ -1474,9 +1474,9 @@ export const ExplorePage: React.FC = () => {
               <div
                 style={{
                   position: 'absolute',
-                  bottom: 24,
-                  left: 28,
-                  right: 28,
+                  bottom: 20,
+                  left: 'clamp(16px, 3.5vw, 28px)',
+                  right: 'clamp(16px, 3.5vw, 28px)',
                   color: '#ffffff',
                 }}
               >
@@ -1496,7 +1496,7 @@ export const ExplorePage: React.FC = () => {
                 <h2
                   style={{
                     fontFamily: "'Playfair Display', Georgia, serif",
-                    fontSize: 'clamp(1.8rem, 4vw, 2.4rem)',
+                    fontSize: 'clamp(1.6rem, 4vw, 2.4rem)',
                     fontWeight: 800,
                     margin: '8px 0 4px 0',
                     lineHeight: 1.2,
@@ -1512,12 +1512,12 @@ export const ExplorePage: React.FC = () => {
             </div>
 
             {/* Modal Body */}
-            <div style={{ padding: '28px 32px' }}>
+            <div style={{ padding: 'clamp(18px, 3.5vw, 28px) clamp(16px, 3.5vw, 32px)' }}>
               {/* Snapshot Quick Badges */}
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 110px), 1fr))',
                   gap: 12,
                   marginBottom: 24,
                   padding: 16,
@@ -1578,7 +1578,7 @@ export const ExplorePage: React.FC = () => {
                   <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 10 }}>
                     Destination Gallery
                   </h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: 10 }}>
                     {activeModalDest.gallery.map((imgUrl, i) => (
                       <img
                         key={i}
@@ -1597,7 +1597,7 @@ export const ExplorePage: React.FC = () => {
               )}
 
               {/* Top Attractions & Highlights */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginBottom: 24 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 20, marginBottom: 24 }}>
                 <div>
                   <h4 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-primary)', marginBottom: 10 }}>
                     Top Attractions & Things to Do

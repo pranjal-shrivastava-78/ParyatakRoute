@@ -467,42 +467,6 @@ export const ItineraryViewPage: React.FC = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="main-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-        <div style={{ textAlign: 'center' }}>
-          <Loader2 size={36} className="spinner" style={{ margin: '0 auto 16px auto' }} />
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-ink)' }}>Loading Journey Schedule...</h2>
-          <p style={{ color: 'var(--color-graphite)', fontSize: 14 }}>Synchronizing with Supabase & Groq AI engine</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !itinerary) {
-    return (
-      <div className="main-content" style={{ padding: '60px 0' }}>
-        <div className="container" style={{ maxWidth: 600 }}>
-          <div className="state-empty" style={{ backgroundColor: 'var(--color-white)', border: '1px solid var(--color-divider-gray)' }}>
-            <AlertCircle size={40} color="var(--color-danger)" style={{ margin: '0 auto 12px auto' }} />
-            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Unable to Access Itinerary</h2>
-            <p style={{ fontSize: 14, color: 'var(--color-graphite)', marginBottom: 20 }}>
-              {error || 'This itinerary was not found or authorization was denied.'}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-              <Link to="/trips" className="btn-secondary">
-                View My Trips
-              </Link>
-              <Link to="/create" className="btn-primary">
-                Plan a New Trip
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // Comprehensive Trip-Level Budget Calculation (strictly sum of activities across all days without double-counting)
   const tripBudgetSummary = useMemo(() => {
     if (!itinerary?.days) return null;
@@ -669,6 +633,42 @@ export const ItineraryViewPage: React.FC = () => {
       hasItems,
     };
   }, [itinerary, trip]);
+
+  if (isLoading) {
+    return (
+      <div className="main-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <div style={{ textAlign: 'center' }}>
+          <Loader2 size={36} className="spinner" style={{ margin: '0 auto 16px auto' }} />
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-ink)' }}>Loading Journey Schedule...</h2>
+          <p style={{ color: 'var(--color-graphite)', fontSize: 14 }}>Synchronizing with Supabase & Groq AI engine</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !itinerary) {
+    return (
+      <div className="main-content" style={{ padding: '60px 0' }}>
+        <div className="container" style={{ maxWidth: 600 }}>
+          <div className="state-empty" style={{ backgroundColor: 'var(--color-white)', border: '1px solid var(--color-divider-gray)' }}>
+            <AlertCircle size={40} color="var(--color-danger)" style={{ margin: '0 auto 12px auto' }} />
+            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Unable to Access Itinerary</h2>
+            <p style={{ fontSize: 14, color: 'var(--color-graphite)', marginBottom: 20 }}>
+              {error || 'This itinerary was not found or authorization was denied.'}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+              <Link to="/trips" className="btn-secondary">
+                View My Trips
+              </Link>
+              <Link to="/create" className="btn-primary">
+                Plan a New Trip
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const selectedDay =
     itinerary.days?.find((d: any) => (d.day_number ?? d.dayNumber) === selectedDayNumber) ||
@@ -1055,7 +1055,7 @@ export const ItineraryViewPage: React.FC = () => {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
                 gap: 14,
                 marginBottom: 20,
               }}
@@ -1137,7 +1137,7 @@ export const ItineraryViewPage: React.FC = () => {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 130px), 1fr))',
                   gap: 12,
                 }}
               >
@@ -1424,21 +1424,18 @@ export const ItineraryViewPage: React.FC = () => {
               return (
                 <div
                   key={act.id || index}
+                  className="itinerary-activity-item"
                   style={{
                     backgroundColor: 'var(--surface-white-canvas, #ffffff)',
                     border: '1px solid var(--color-divider-gray, #D8D4C7)',
                     borderRadius: 'var(--radius-cards, 16px)',
                     padding: 20,
-                    display: 'grid',
-                    gridTemplateColumns: '120px 1fr auto',
-                    gap: 20,
-                    alignItems: 'start',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                     transition: 'border-color 0.15s ease',
                   }}
                 >
                   {/* Time & Duration Column */}
-                  <div style={{ borderRight: '1px solid var(--color-cloud, #E8E4D9)', paddingRight: 16 }}>
+                  <div className="itinerary-activity-time">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 800, fontSize: 15, color: 'var(--color-text-primary, #26332E)' }}>
                       <Clock size={16} color="var(--color-primary, #183D32)" />
                       <span>{startTime}</span>

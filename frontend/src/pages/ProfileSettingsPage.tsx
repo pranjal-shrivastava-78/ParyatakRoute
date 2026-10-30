@@ -273,7 +273,7 @@ export const ProfileSettingsPage: React.FC = () => {
 
           <div style={{ height: 1, backgroundColor: 'var(--color-cloud)', marginBottom: 20 }} />
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, fontSize: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: 16, fontSize: 14 }}>
             <div>
               <div style={{ color: 'var(--color-graphite)', fontSize: 12 }}>User ID (UUID)</div>
               <div style={{ fontWeight: 600, color: 'var(--color-ink)', wordBreak: 'break-all', marginTop: 2 }}>
@@ -293,7 +293,7 @@ export const ProfileSettingsPage: React.FC = () => {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
             gap: 16,
             marginBottom: 24,
           }}

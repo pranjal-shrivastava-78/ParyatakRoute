@@ -53,7 +53,7 @@ export const LoginPage: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 'var(--spacing-32) var(--spacing-16)',
+        padding: 'clamp(16px, 4vw, 32px) clamp(12px, 3.5vw, 16px)',
       }}
     >
       <div
@@ -62,7 +62,7 @@ export const LoginPage: React.FC = () => {
           maxWidth: 440,
           border: '1px solid var(--color-divider-gray)',
           borderRadius: 'var(--radius-cards)',
-          padding: 'var(--spacing-32)',
+          padding: 'clamp(20px, 5vw, 32px) clamp(16px, 4.5vw, 32px)',
           backgroundColor: 'var(--surface-white-canvas)',
         }}
       >

@@ -200,7 +200,7 @@ export const TripsListPage: React.FC = () => {
             </Link>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 20 }}>
             {trips.map((trip) => {
               const isOpening = generatingTripId === trip.id;
               return (
