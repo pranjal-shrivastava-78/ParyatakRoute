@@ -1,21 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Send,
-  Sparkles,
-  Compass,
-  ArrowRight,
-  RefreshCw,
-  MapPin,
   Calendar,
-  DollarSign,
-  HelpCircle,
-  ThumbsUp,
-  Share2,
+  Camera,
+  CloudSun,
+  IndianRupee,
+  Briefcase,
+  MapPin,
+  Compass,
+  ChevronRight,
+  Copy,
+  Check,
+  RefreshCw,
+  Sparkles,
+  MessageSquare,
+  ArrowRight,
+  Loader2,
 } from 'lucide-react';
 import { chatService } from '../services/chatService';
-import { SUGGESTED_PROMPTS } from '../fixtures/chatData';
-import { useNavigate, useLocation } from 'react-router-dom';
 import BrandLogo from '../components/BrandLogo';
+import MarkdownRenderer from '../components/MarkdownRenderer';
+import '../styles/chatPage.css';
 
 interface Message {
   id: string;
@@ -25,51 +31,69 @@ interface Message {
   suggestedActions?: string[];
 }
 
-const INITIAL_MESSAGES: Message[] = [
+interface SuggestedPrompt {
+  id: string;
+  text: string;
+  icon: React.ComponentType<{ size?: number; className?: string; color?: string }>;
+}
+
+const SUGGESTED_QUESTIONS: SuggestedPrompt[] = [
   {
-    id: 'msg_welcome_1',
-    sender: 'assistant',
-    text: `Namaste & Welcome to ParyatakRoute Travel Intelligence! 🌏
-
-I am your personal AI travel advisor. You can ask me about:
-- **Optimal travel seasons & weather** for destinations across India and globally.
-- **Hidden gems & photographic viewpoints** in Rajasthan, Kerala, Ladakh, and Goa.
-- **Budget optimization** and packing recommendations.
-- **Custom route planning** and cultural etiquette.
-
-No registration required—how can I assist your wanderlust today?`,
-    timestamp: 'Just now',
-    suggestedActions: [
-      'Top 3 heritage spots in Jaipur',
-      'What should I pack for Kerala in December?',
-      'Best time to visit Ladakh without acclimatization issues',
-    ],
+    id: 'sug_ladakh',
+    text: 'Best time to visit Ladakh',
+    icon: Calendar,
+  },
+  {
+    id: 'sug_kerala',
+    text: 'Hidden gems in Kerala',
+    icon: Camera,
+  },
+  {
+    id: 'sug_rajasthan',
+    text: 'Weather in Rajasthan',
+    icon: CloudSun,
+  },
+  {
+    id: 'sug_goa',
+    text: 'Budget trip to Goa',
+    icon: IndianRupee,
+  },
+  {
+    id: 'sug_packing',
+    text: 'Packing essentials',
+    icon: Briefcase,
+  },
+  {
+    id: 'sug_jaipur',
+    text: '3-day Jaipur itinerary',
+    icon: MapPin,
   },
 ];
 
 export const ChatPage: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  // Empty messages array initially so the clean, elegant Welcome / Hero screen is displayed
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastFailedText, setLastFailedText] = useState<string | null>(null);
-  const [likedMessageIds, setLikedMessageIds] = useState<Set<string>>(new Set());
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const heroInputRef = useRef<HTMLInputElement>(null);
+  const conversationInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const initialPromptHandled = useRef(false);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
+  // Auto-scroll when new messages arrive
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, isLoading]);
 
-  // Automatically submit initial prompt passed from Homepage Card 2 ("Ask AI")
+  // Handle incoming initial prompt passed from Homepage Card 2 ("Ask AI") or URL search
   useEffect(() => {
     if (initialPromptHandled.current) return;
     const promptFromState = (location.state as any)?.initialPrompt;
@@ -102,7 +126,6 @@ export const ChatPage: React.FC = () => {
     setIsLoading(true);
 
     const historyTurns = messages
-      .filter((m) => m.id !== 'msg_welcome_1')
       .slice(-10)
       .map((m) => ({
         role: (m.sender === 'assistant' ? 'assistant' : 'user') as 'assistant' | 'user',
@@ -131,237 +154,263 @@ export const ChatPage: React.FC = () => {
         err?.response?.data?.error?.message ||
         err?.response?.data?.detail ||
         err?.message ||
-        'Unable to reach Groq AI assistant. Please try again.';
+        'Unable to reach AI assistant. Please try again.';
       setError(msg);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleActionClick = (action: string) => {
-    if (action.includes('Plan') || action.includes('Itinerary')) {
-      navigate('/create');
-    } else {
-      handleSend(action);
-    }
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2500);
   };
 
-  const handleToggleLike = (id: string) => {
-    setLikedMessageIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const handleClearChat = () => {
-    setMessages(INITIAL_MESSAGES);
+  const handleResetConversation = () => {
+    setMessages([]);
+    setInput('');
     setError(null);
+    setLastFailedText(null);
+    setTimeout(() => heroInputRef.current?.focus(), 100);
   };
+
+  const hasMessages = messages.length > 0;
 
   return (
-    <div style={{ minHeight: 'calc(100vh - 80px)', backgroundColor: 'var(--surface-white-canvas)', padding: 'var(--spacing-32) var(--spacing-16)' }}>
-      <div className="container" style={{ maxWidth: 960 }}>
-        {/* Page Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-24)', flexWrap: 'wrap', gap: 'var(--spacing-12)' }}>
-          <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 14px', borderRadius: 'var(--radius-pills)', backgroundColor: 'var(--color-primary-subtle)', color: 'var(--color-primary)', fontSize: 13, fontWeight: 'var(--font-weight-semibold)', marginBottom: 8 }}>
-              <BrandLogo variant="light" layout="emblem-only" emblemHeight={18} clickable={false} />
-              <span>ParyatakRoute Intelligence</span>
-            </div>
-            <h1 style={{ fontSize: 'var(--text-app-heading)', lineHeight: 'var(--leading-app-heading)', fontWeight: 'var(--font-weight-extrabold)', color: 'var(--color-ink)' }}>
-              AI Travel Assistant
-            </h1>
-            <p style={{ color: 'var(--color-graphite)', fontSize: 15, marginTop: 4 }}>
-              Zero-friction conversational guidance powered by Groq. Accessible to all travelers with no login required.
-            </p>
+    <div className="chat-page-root">
+      {!hasMessages ? (
+        /* ======================================================================
+           WELCOME / HERO VIEW (Initial State matching uploaded reference)
+           ====================================================================== */
+        <div className="ai-welcome-container">
+          {/* Eyebrow with Sunbeam rays */}
+          <div className="ai-greeting-eyebrow">
+            <svg
+              width="34"
+              height="24"
+              viewBox="0 0 34 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+              style={{ flexShrink: 0 }}
+            >
+              <path d="M4 18C7 16 10 14 13 13" stroke="#D97745" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M8 9C11 9 14 10 17 12" stroke="#D97745" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M18 3C18 6 18 9 18 12" stroke="#D97745" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M28 7C25 8 23 10 20 12" stroke="#D97745" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+            <span className="ai-greeting-text">Namaste, Traveler!</span>
           </div>
 
-          <div style={{ display: 'flex', gap: 'var(--spacing-8)' }}>
-            <button
-              onClick={handleClearChat}
-              className="btn-secondary"
-              style={{ fontSize: 13, padding: '8px 14px' }}
-              title="Reset Conversation"
-            >
-              <RefreshCw size={14} />
-              <span>Reset Chat</span>
-            </button>
-            <button
-              onClick={() => navigate('/create')}
-              className="btn-primary"
-              style={{ fontSize: 13, padding: '8px 16px' }}
-            >
-              <Calendar size={14} />
-              <span>Plan Trip Wizard</span>
-            </button>
-          </div>
-        </div>
+          {/* Main Heading in Playfair Display with Terracotta Accent */}
+          <h1 className="ai-welcome-title">
+            I'm your ParyatakRoute
+            <br />
+            Travel Intelligence <span className="accent-word">Assistant</span>
+          </h1>
 
-        {/* Chat Canvas */}
-        <div
-          style={{
-            border: '1px solid var(--color-divider-gray)',
-            borderRadius: 'var(--radius-cards)',
-            backgroundColor: 'var(--surface-white-canvas)',
-            display: 'flex',
-            flexDirection: 'column',
-            height: '620px',
-            overflow: 'hidden',
-          }}
-        >
-          {/* Messages Scroll Area */}
-          <div
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: 'var(--spacing-24)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--spacing-20)',
+          {/* Supporting Description in Inter */}
+          <p className="ai-welcome-description">
+            Ask me anything about destinations, itineraries, weather, hidden gems, budget tips and more. I'm here to help you plan your perfect journey.
+          </p>
+
+          {/* Main AI Prompt Input Pill */}
+          <form
+            className="ai-hero-input-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend();
             }}
           >
+            <div className="ai-hero-input-pill">
+              <div className="ai-hero-input-icon">
+                <MessageSquare size={20} color="var(--color-primary, #183D32)" />
+              </div>
+              <input
+                ref={heroInputRef}
+                type="text"
+                className="ai-hero-input-field"
+                placeholder="Ask about destinations, seasons, packing, itineraries or anything travel-related..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                disabled={isLoading}
+                autoFocus
+              />
+              <button
+                type="submit"
+                className="ai-hero-send-btn"
+                disabled={!input.trim() || isLoading}
+                title="Send prompt to AI Assistant"
+                aria-label="Send prompt"
+              >
+                {isLoading ? (
+                  <Loader2 size={18} className="spinner" />
+                ) : (
+                  <Send size={18} style={{ transform: 'translateX(1px)' }} />
+                )}
+              </button>
+            </div>
+          </form>
+
+          {/* "Try asking about" Divider */}
+          <div className="ai-divider-container">
+            <div className="ai-divider-line" />
+            <div className="ai-divider-center">
+              <Compass size={17} color="var(--color-primary, #183D32)" />
+              <span>Try asking about</span>
+            </div>
+            <div className="ai-divider-line" />
+          </div>
+
+          {/* 6 Clickable Suggestion Cards Grid (3 columns on desktop, 2 on tablet, 1 on mobile) */}
+          <div className="ai-suggestions-grid">
+            {SUGGESTED_QUESTIONS.map((item) => {
+              const IconComp = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="ai-suggestion-card"
+                  onClick={() => handleSend(item.text)}
+                  disabled={isLoading}
+                >
+                  <div className="ai-suggestion-card-left">
+                    <IconComp size={18} className="ai-suggestion-icon" />
+                    <span className="ai-suggestion-text">{item.text}</span>
+                  </div>
+                  <ChevronRight size={15} className="ai-suggestion-arrow" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        /* ======================================================================
+           CONVERSATION VIEW (Active Chat State after prompt submission)
+           ====================================================================== */
+        <div className="ai-chat-conversation-container">
+          {/* Top Conversation Toolbar */}
+          <div className="ai-chat-toolbar">
+            <div className="ai-chat-identity">
+              <BrandLogo variant="light" layout="emblem-only" emblemHeight={24} clickable={false} />
+              <div>
+                <span className="ai-chat-identity-title">ParyatakRoute Travel Intelligence</span>
+                <span className="ai-chat-identity-badge" style={{ marginLeft: 8 }}>AI Advisor</span>
+              </div>
+            </div>
+
+            <div className="ai-chat-toolbar-actions">
+              <button
+                type="button"
+                onClick={handleResetConversation}
+                className="btn-secondary"
+                style={{ fontSize: 13, padding: '7px 14px' }}
+                title="Start a new conversation"
+              >
+                <RefreshCw size={13} />
+                <span>New Chat</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/create')}
+                className="btn-primary"
+                style={{ fontSize: 13, padding: '7px 16px' }}
+              >
+                <Calendar size={13} />
+                <span>Plan Trip Wizard</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Messages Stream */}
+          <div className="ai-messages-stream">
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                }}
+                className={msg.sender === 'user' ? 'ai-message-row-user' : 'ai-message-row-assistant'}
               >
-                {/* Sender badge */}
-                <div style={{ fontSize: 12, color: 'var(--color-graphite)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {msg.sender === 'assistant' ? (
-                    <>
-                      <BrandLogo variant="light" layout="emblem-only" emblemHeight={22} clickable={false} />
-                      <span style={{ fontWeight: 600 }}>Paryatak Assistant</span>
-                    </>
-                  ) : (
-                    <span>You</span>
-                  )}
-                  <span>•</span>
-                  <span>{msg.timestamp}</span>
-                </div>
+                {/* User Message Bubble */}
+                {msg.sender === 'user' ? (
+                  <>
+                    <div className="ai-message-bubble-user">{msg.text}</div>
+                    <span className="ai-message-meta-user">{msg.timestamp}</span>
+                  </>
+                ) : (
+                  /* Assistant Message Bubble */
+                  <>
+                    <div className="ai-message-bubble-assistant">
+                      <MarkdownRenderer content={msg.text} />
 
-                {/* Bubble */}
-                <div
-                  style={{
-                    maxWidth: '82%',
-                    padding: '14px 18px',
-                    borderRadius: msg.sender === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                    backgroundColor: msg.sender === 'user' ? 'var(--color-hopper-blue)' : 'var(--color-cloud)',
-                    color: msg.sender === 'user' ? 'var(--color-white)' : 'var(--color-ink)',
-                    fontSize: 15,
-                    lineHeight: 1.5,
-                    border: msg.sender === 'assistant' ? '1px solid var(--color-divider-gray)' : 'none',
-                    whiteSpace: 'pre-wrap',
-                  }}
-                >
-                  {msg.text}
-                </div>
+                      {/* Follow-up Action Chips */}
+                      {msg.suggestedActions && msg.suggestedActions.length > 0 && (
+                        <div className="ai-followup-chips">
+                          {msg.suggestedActions.map((action, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              className="ai-followup-chip"
+                              onClick={() => {
+                                if (action.includes('Plan') || action.includes('Itinerary')) {
+                                  navigate('/create');
+                                } else {
+                                  handleSend(action);
+                                }
+                              }}
+                            >
+                              <span>{action}</span>
+                              <ArrowRight size={12} />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
-                {/* Assistant Suggestion Chips & Utility Bar */}
-                {msg.sender === 'assistant' && (
-                  <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {msg.suggestedActions && msg.suggestedActions.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        {msg.suggestedActions.map((action, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => handleActionClick(action)}
-                            style={{
-                              backgroundColor: 'var(--surface-white-canvas)',
-                              border: '1px solid var(--color-hopper-blue)',
-                              color: 'var(--color-hopper-blue)',
-                              borderRadius: 'var(--radius-pills)',
-                              padding: '5px 12px',
-                              fontSize: 12,
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              transition: 'all 0.15s ease',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'var(--color-hopper-blue)';
-                              e.currentTarget.style.color = '#ffffff';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'var(--surface-white-canvas)';
-                              e.currentTarget.style.color = 'var(--color-hopper-blue)';
-                            }}
-                          >
-                            <span>{action}</span>
-                            <ArrowRight size={11} />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: 'var(--color-graphite)' }}>
+                    {/* Assistant Message Actions (Copy & Timestamp) */}
+                    <div className="ai-message-meta-assistant">
+                      <BrandLogo variant="light" layout="emblem-only" emblemHeight={16} clickable={false} />
+                      <span>Paryatak Intelligence • {msg.timestamp}</span>
+                      <span style={{ margin: '0 4px' }}>•</span>
                       <button
-                        onClick={() => handleToggleLike(msg.id)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, color: likedMessageIds.has(msg.id) ? 'var(--color-hopper-blue)' : 'var(--color-graphite)' }}
-                        title="Helpful reply"
+                        type="button"
+                        onClick={() => handleCopy(msg.text, msg.id)}
+                        className={`ai-action-btn ${copiedId === msg.id ? 'copied' : ''}`}
+                        title="Copy text to clipboard"
                       >
-                        <ThumbsUp size={13} />
-                        <span>{likedMessageIds.has(msg.id) ? 'Helpful' : 'Like'}</span>
+                        {copiedId === msg.id ? <Check size={12} /> : <Copy size={12} />}
+                        <span>{copiedId === msg.id ? 'Copied!' : 'Copy'}</span>
                       </button>
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
             ))}
 
             {/* Loading Indicator */}
             {isLoading && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <div style={{ fontSize: 12, color: 'var(--color-graphite)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Sparkles size={12} color="var(--color-hopper-blue)" />
-                  <span style={{ fontWeight: 600 }}>Paryatak Assistant</span>
-                </div>
-                <div
-                  style={{
-                    backgroundColor: 'var(--color-cloud)',
-                    border: '1px solid var(--color-divider-gray)',
-                    borderRadius: '18px 18px 18px 4px',
-                    padding: '12px 18px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    color: 'var(--color-graphite)',
-                    fontSize: 14,
-                  }}
-                >
-                  <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
-                  <span>Thinking & analyzing regional itinerary context...</span>
+              <div className="ai-message-row-assistant">
+                <div className="ai-loading-bubble">
+                  <Loader2 size={16} className="spinner" style={{ color: 'var(--color-primary, #183D32)' }} />
+                  <span>Analyzing regional travel intelligence & weather...</span>
                 </div>
               </div>
             )}
 
-            {/* Error Message */}
+            {/* Error Banner */}
             {error && (
-              <div
-                style={{
-                  padding: '10px 16px',
-                  backgroundColor: 'var(--color-danger-bg)',
-                  border: '1px solid var(--color-danger)',
-                  borderRadius: 'var(--radius-compactcontrols)',
-                  color: 'var(--color-danger)',
-                  fontSize: 13,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-              >
+              <div className="ai-error-banner">
                 <span>{error}</span>
                 <button
                   type="button"
                   onClick={() => handleSend(undefined, true)}
-                  style={{ background: 'none', border: 'none', color: 'var(--color-danger)', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#D9383A',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
                 >
                   Retry
                 </button>
@@ -371,100 +420,46 @@ export const ChatPage: React.FC = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Prompt Suggestions Bar */}
-          <div
-            style={{
-              padding: '10px 16px',
-              backgroundColor: 'var(--color-cloud)',
-              borderTop: '1px solid var(--color-divider-gray)',
-              borderBottom: '1px solid var(--color-divider-gray)',
-              overflowX: 'auto',
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              gap: 8,
-            }}
-          >
-            <span style={{ fontSize: 12, color: 'var(--color-graphite)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <HelpCircle size={13} />
-              Suggestions:
-            </span>
-            {SUGGESTED_PROMPTS.map((prompt, i) => (
-              <button
-                key={i}
-                onClick={() => handleSend(prompt)}
-                disabled={isLoading}
-                style={{
-                  background: 'none',
-                  border: '1px solid var(--color-divider-gray)',
-                  borderRadius: 'var(--radius-pills)',
-                  padding: '3px 10px',
-                  fontSize: 12,
-                  color: 'var(--color-ink)',
-                  cursor: 'pointer',
-                  backgroundColor: 'var(--surface-white-canvas)',
-                  flexShrink: 0,
-                }}
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-
-          {/* Chat Input Bar */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSend();
-            }}
-            style={{
-              padding: '16px 20px',
-              backgroundColor: 'var(--surface-white-canvas)',
-              display: 'flex',
-              gap: 'var(--spacing-12)',
-              alignItems: 'center',
-            }}
-          >
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about destinations, season, packing, or itineraries (e.g. 3-day Jaipur trip)..."
-              disabled={isLoading}
-              style={{
-                flex: 1,
-                border: '1px solid var(--color-divider-gray)',
-                borderRadius: 'var(--radius-pills)',
-                padding: '12px 20px',
-                fontSize: 15,
-                outline: 'none',
-                color: 'var(--color-ink)',
-              }}
-              onFocus={(e) => (e.target.style.borderColor = 'var(--color-hopper-blue)')}
-              onBlur={(e) => (e.target.style.borderColor = 'var(--color-divider-gray)')}
-            />
-
-            <button
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              className="btn-primary"
-              style={{
-                borderRadius: 'var(--radius-pills)',
-                width: 48,
-                height: 48,
-                padding: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                opacity: !input.trim() || isLoading ? 0.5 : 1,
+          {/* Persistent Bottom Message Composer */}
+          <div className="ai-bottom-composer">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSend();
               }}
             >
-              <Send size={18} />
-            </button>
-          </form>
+              <div className="ai-hero-input-pill">
+                <div className="ai-hero-input-icon">
+                  <Sparkles size={18} color="var(--color-primary, #183D32)" />
+                </div>
+                <input
+                  ref={conversationInputRef}
+                  type="text"
+                  className="ai-hero-input-field"
+                  placeholder="Ask a follow-up question or explore another destination..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  disabled={isLoading}
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  className="ai-hero-send-btn"
+                  disabled={!input.trim() || isLoading}
+                  title="Send message"
+                  aria-label="Send message"
+                >
+                  {isLoading ? (
+                    <Loader2 size={18} className="spinner" />
+                  ) : (
+                    <Send size={18} style={{ transform: 'translateX(1px)' }} />
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -10,17 +10,12 @@ import {
   Send,
   Heart,
   Check,
-  Star,
-  QrCode,
-  ShieldCheck,
-  Zap,
-  TrendingUp,
-  Compass,
   Loader2,
   Camera,
 } from 'lucide-react';
 import AuthModal from '../components/AuthModal';
 import BrandLogo from '../components/BrandLogo';
+import { DatePickerField } from '../components/DatePickerField';
 import { useAuth } from '../context/AuthContext';
 import { favouriteService } from '../services/favouriteService';
 import { travelDataService } from '../services/travelDataService';
@@ -125,24 +120,56 @@ const FEATURED_EXPERIENCES: FeaturedExperience[] = [
   },
 ];
 
-const HERO_BACKGROUNDS = [
+interface HeroBackground {
+  id: string;
+  name: string;
+  url: string;
+}
+
+const MASTER_HERO_BACKGROUNDS: HeroBackground[] = [
   {
-    name: 'Leh Ladakh Valley & Monasteries',
+    id: 'leh_ladakh',
+    name: 'Leh Ladakh – Himalayan mountains & valleys',
     url: 'https://images.unsplash.com/photo-1596895111956-bf1cf0599ce5?auto=format&fit=crop&w=1920&q=85',
   },
   {
-    name: 'Amber Fort & Royal Jaipur',
+    id: 'jaipur',
+    name: 'Jaipur – Heritage architecture & Pink City',
     url: 'https://images.unsplash.com/photo-1477587458883-47145ed94245?auto=format&fit=crop&w=1920&q=85',
   },
   {
-    name: 'Munnar Tea Plantations, Kerala',
+    id: 'goa',
+    name: 'Goa – Tropical beaches & palm trees',
+    url: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=1920&q=85',
+  },
+  {
+    id: 'kerala',
+    name: 'Kerala – Backwaters & lush emerald landscapes',
     url: 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=1920&q=85',
   },
   {
-    name: 'Goa Coastal Serenity',
-    url: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=1920&q=85',
+    id: 'manali',
+    name: 'Manali – Snow-covered mountains & valleys',
+    url: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=1920&q=85',
+  },
+  {
+    id: 'varanasi',
+    name: 'Varanasi – Ganga ghats & evening atmosphere',
+    url: 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=1920&q=85',
   },
 ];
+
+/**
+ * Fisher-Yates algorithm for unbiased array shuffling
+ */
+function fisherYatesShuffle<T>(array: T[]): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
 
 const QUICK_PROMPTS = [
   '7-day serene Kerala backwaters & tea plantations for couples under ₹45,000',
@@ -163,21 +190,17 @@ const POPULAR_DESTINATIONS = [
 ];
 
 export const HomePage: React.FC = () => {
-  // Card 1: Trip Planning States
-  const [destination, setDestination] = useState('');
-  const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 14);
-    return d.toISOString().split('T')[0];
-  });
-  const [endDate, setEndDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 19);
-    return d.toISOString().split('T')[0];
-  });
-  const [budget, setBudget] = useState('35000');
-  const [travelers, setTravelers] = useState('2');
+  // Hero Backgrounds: Randomize order on initial page load / fresh session using Fisher-Yates
+  const [heroBackgrounds] = useState<HeroBackground[]>(() => fisherYatesShuffle(MASTER_HERO_BACKGROUNDS));
   const [bgIndex, setBgIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Form Search States (Clean & Empty by default per requirements)
+  const [destination, setDestination] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [budget, setBudget] = useState('');
+  const [travelers, setTravelers] = useState('');
 
   // Autocomplete state
   const [suggestions, setSuggestions] = useState<NormalizedPlace[]>([]);
@@ -185,7 +208,7 @@ export const HomePage: React.FC = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchDropdownRef = useRef<HTMLFormElement>(null);
 
-  // Card 2: AI Travel Assistant Prompt State
+  // AI Assistant Prompt State
   const [aiPrompt, setAiPrompt] = useState('');
 
   // Favorites & Modals
@@ -195,8 +218,22 @@ export const HomePage: React.FC = () => {
 
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const todayIso = new Date().toISOString().split('T')[0];
 
-  // Debounced geocoding search via Nominatim
+  // Automatic background rotation every 8 seconds with pause and reduced-motion handling
+  useEffect(() => {
+    // Respect user's motion preferences
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion || isPaused) return;
+
+    const timer = setInterval(() => {
+      setBgIndex((prev) => (prev + 1) % heroBackgrounds.length);
+    }, 8000);
+
+    return () => clearInterval(timer);
+  }, [isPaused, heroBackgrounds.length]);
+
+  // Debounced geocoding search via Nominatim for destination autocomplete
   useEffect(() => {
     if (!destination || destination.trim().length < 2) {
       setSuggestions([]);
@@ -219,7 +256,7 @@ export const HomePage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [destination]);
 
-  // Click outside to close dropdown
+  // Click outside to close destination suggestions
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (searchDropdownRef.current && !searchDropdownRef.current.contains(e.target as Node)) {
@@ -235,21 +272,20 @@ export const HomePage: React.FC = () => {
     setShowSuggestions(false);
   };
 
-  // Card 1: Submit to Create Trip Planner
+  // Submit to Create Trip Planner
   const handlePlanTripSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const dest = destination.trim() || 'Goa, India';
-    const params = new URLSearchParams({
-      destination: dest,
-      startDate,
-      endDate,
-      budget: budget || '35000',
-      travelers: travelers || '2',
-    });
-    navigate(`/create?${params.toString()}`);
+    const dest = destination.trim();
+    const params = new URLSearchParams();
+    if (dest) params.set('destination', dest);
+    if (startDate) params.set('startDate', startDate);
+    if (endDate) params.set('endDate', endDate);
+    if (budget) params.set('budget', budget);
+    if (travelers) params.set('travelers', travelers);
+    navigate(`/create${params.toString() ? `?${params.toString()}` : ''}`);
   };
 
-  // Card 2: Submit to AI Assistant Page
+  // Submit to AI Assistant Page
   const handleAskAISubmit = (promptText?: string) => {
     const textToSend = (promptText || aiPrompt).trim();
     if (!textToSend) return;
@@ -293,6 +329,8 @@ export const HomePage: React.FC = () => {
     navigate(`/create?destination=${encodeURIComponent(destName)}`);
   };
 
+  const currentBg = heroBackgrounds[bgIndex] || heroBackgrounds[0];
+
   return (
     <div className="main-content" style={{ backgroundColor: 'var(--color-bg-main)' }}>
       {/* Toast Notification */}
@@ -322,17 +360,37 @@ export const HomePage: React.FC = () => {
 
       <div className="container">
         {/* ==========================================================================
-            CARD 1: PLAN YOUR TRIP (Large, visually immersive travel search card)
+            CARD 1: PLAN YOUR EXTRAORDINARY JOURNEY (Automatic Background Slideshow)
             ========================================================================== */}
         <section
           className="travel-search-card"
-          style={{
-            backgroundImage: `url('${HERO_BACKGROUNDS[bgIndex].url}')`,
-          }}
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          style={{ position: 'relative', overflow: 'hidden' }}
         >
-          <div className="travel-card-overlay" />
+          {/* Layered Crossfade Background Photographs */}
+          {heroBackgrounds.map((bg, idx) => (
+            <div
+              key={bg.id}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundImage: `url('${bg.url}')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                opacity: idx === bgIndex ? 1 : 0,
+                transition: 'opacity 1200ms cubic-bezier(0.4, 0, 0.2, 1)',
+                pointerEvents: 'none',
+                zIndex: 0,
+              }}
+            />
+          ))}
 
-          <div className="travel-card-content">
+          {/* Dark Overlay for Readability */}
+          <div className="travel-card-overlay" style={{ zIndex: 1 }} />
+
+          {/* Foreground Text & Search Form */}
+          <div className="travel-card-content" style={{ position: 'relative', zIndex: 2 }}>
             <div className="travel-card-eyebrow">
               <BrandLogo variant="dark" layout="emblem-only" emblemHeight={18} clickable={false} />
               <span>Curated Journeys • Geospatial Intelligence</span>
@@ -347,8 +405,18 @@ export const HomePage: React.FC = () => {
             </p>
 
             {/* Centered Horizontal White Search Panel */}
-            <form className="horizontal-search-panel" onSubmit={handlePlanTripSubmit} ref={searchDropdownRef}>
-              {/* 1. Destination Field */}
+            <form
+              className="horizontal-search-panel"
+              onSubmit={handlePlanTripSubmit}
+              ref={searchDropdownRef}
+              onFocus={() => setIsPaused(true)}
+              onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setIsPaused(false);
+                }
+              }}
+            >
+              {/* 1. Destination Field (Empty by default) */}
               <div className="h-search-field h-search-field-destination">
                 <label className="h-search-label">
                   <MapPin size={13} color="var(--color-accent)" />
@@ -358,15 +426,17 @@ export const HomePage: React.FC = () => {
                   <input
                     type="text"
                     className="h-search-input"
-                    placeholder="Where to? (e.g. Goa, Jaipur, Ladakh)"
+                    placeholder="Where to? (e.g. Goa, Jaipur)"
                     value={destination}
                     onChange={(e) => {
                       setDestination(e.target.value);
                       setShowSuggestions(true);
                     }}
-                    onFocus={() => setShowSuggestions(true)}
+                    onFocus={() => {
+                      setShowSuggestions(true);
+                      setIsPaused(true);
+                    }}
                     autoComplete="off"
-                    required
                   />
                   {isLoadingSuggestions && <Loader2 size={14} className="spinner" />}
                 </div>
@@ -390,7 +460,15 @@ export const HomePage: React.FC = () => {
                       ))
                     ) : (
                       <div style={{ padding: '8px 12px' }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-graphite)', textTransform: 'uppercase', marginBottom: 6 }}>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: 'var(--color-graphite)',
+                            textTransform: 'uppercase',
+                            marginBottom: 6,
+                          }}
+                        >
                           Popular Destinations
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -421,45 +499,47 @@ export const HomePage: React.FC = () => {
 
               <div className="h-search-divider" />
 
-              {/* 2. Departure Date */}
+              {/* 2. Departure Date (Empty by default, fully clickable popover) */}
               <div className="h-search-field">
                 <label className="h-search-label">
                   <Calendar size={13} color="var(--color-primary)" />
                   Departure
                 </label>
                 <div className="h-search-input-wrap">
-                  <input
-                    type="date"
-                    className="h-search-input"
+                  <DatePickerField
+                    id="hero-departure-date"
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    required
+                    onChange={setStartDate}
+                    placeholder="Select departure date"
+                    variant="minimal"
+                    minDate={todayIso}
                   />
                 </div>
               </div>
 
               <div className="h-search-divider" />
 
-              {/* 3. Return Date */}
+              {/* 3. Return Date (Empty by default, minDate strictly after departure) */}
               <div className="h-search-field">
                 <label className="h-search-label">
                   <Calendar size={13} color="var(--color-primary)" />
                   Return
                 </label>
                 <div className="h-search-input-wrap">
-                  <input
-                    type="date"
-                    className="h-search-input"
+                  <DatePickerField
+                    id="hero-return-date"
                     value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    required
+                    onChange={setEndDate}
+                    placeholder="Select return date"
+                    variant="minimal"
+                    minDate={startDate || todayIso}
                   />
                 </div>
               </div>
 
               <div className="h-search-divider" />
 
-              {/* 4. Budget (INR) */}
+              {/* 4. Budget (INR) (Empty by default) */}
               <div className="h-search-field">
                 <label className="h-search-label">
                   <IndianRupee size={13} color="var(--color-accent)" />
@@ -470,19 +550,18 @@ export const HomePage: React.FC = () => {
                   <input
                     type="number"
                     step="1000"
-                    min="5000"
+                    min="1000"
                     className="h-search-input"
-                    placeholder="35000"
+                    placeholder="Enter your budget"
                     value={budget}
                     onChange={(e) => setBudget(e.target.value)}
-                    required
                   />
                 </div>
               </div>
 
               <div className="h-search-divider" />
 
-              {/* 5. Travellers */}
+              {/* 5. Travellers (Empty by default) */}
               <div className="h-search-field">
                 <label className="h-search-label">
                   <Users size={13} color="var(--color-primary)" />
@@ -493,7 +572,12 @@ export const HomePage: React.FC = () => {
                     className="h-search-input"
                     value={travelers}
                     onChange={(e) => setTravelers(e.target.value)}
+                    style={{
+                      color: travelers ? 'var(--color-text-primary)' : 'var(--color-graphite)',
+                      cursor: 'pointer',
+                    }}
                   >
+                    <option value="" disabled>Select travellers</option>
                     <option value="1">1 Solo</option>
                     <option value="2">2 Pair / Couple</option>
                     <option value="3">3 Small Group</option>
@@ -502,14 +586,14 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Search/Generate Button */}
+              {/* Search / Plan Trip Action */}
               <button type="submit" className="h-search-btn">
                 <span>Plan Trip</span>
                 <ArrowRight size={16} />
               </button>
             </form>
 
-            {/* Bottom Photo Attribution & Quick Switcher */}
+            {/* Bottom Hero Controls: Current Destination Name & Manual Indicator Dots */}
             <div
               style={{
                 marginTop: 28,
@@ -519,23 +603,26 @@ export const HomePage: React.FC = () => {
                 flexWrap: 'wrap',
                 gap: 12,
                 fontSize: 13,
-                color: 'rgba(255, 255, 255, 0.88)',
+                color: 'rgba(255, 255, 255, 0.92)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <MapPin size={14} color="var(--color-secondary-accent)" />
-                <span>{HERO_BACKGROUNDS[bgIndex].name}</span>
+                <span style={{ fontWeight: 500 }}>{currentBg.name}</span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 12, opacity: 0.85, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <Camera size={13} /> Change background:
                 </span>
-                {HERO_BACKGROUNDS.map((bg, idx) => (
+                {heroBackgrounds.map((bg, idx) => (
                   <button
-                    key={idx}
+                    key={bg.id}
                     type="button"
-                    onClick={() => setBgIndex(idx)}
+                    onClick={() => {
+                      setBgIndex(idx);
+                      setIsPaused(false);
+                    }}
                     style={{
                       width: 10,
                       height: 10,
@@ -544,9 +631,10 @@ export const HomePage: React.FC = () => {
                       backgroundColor: idx === bgIndex ? 'var(--color-accent)' : 'rgba(255,255,255,0.45)',
                       cursor: 'pointer',
                       padding: 0,
-                      transition: 'all 0.15s ease',
-                      transform: idx === bgIndex ? 'scale(1.3)' : 'scale(1)',
+                      transition: 'all 0.2s ease',
+                      transform: idx === bgIndex ? 'scale(1.35)' : 'scale(1)',
                     }}
+                    aria-label={`Select background ${bg.name}`}
                     title={bg.name}
                   />
                 ))}
@@ -556,7 +644,7 @@ export const HomePage: React.FC = () => {
         </section>
 
         {/* ==========================================================================
-            CARD 2: AI TRAVEL ASSISTANT (Directly below Card 1)
+            CARD 2: AI TRAVEL ASSISTANT (Directly below Hero Card)
             ========================================================================== */}
         <section
           className="ai-assistant-card"
@@ -795,335 +883,6 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ==========================================================================
-          SECTION 5: How ParyatakRoute Works
-          ========================================================================== */}
-      <section style={{ padding: 'var(--spacing-48) 0', backgroundColor: 'var(--color-bg-main)' }}>
-        <div className="container">
-          <div style={{ textAlign: 'center', maxWidth: 640, margin: '0 auto var(--spacing-40) auto' }}>
-            <span className="text-link-blue" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Simple 3-Step Journey
-            </span>
-            <h2 className="section-title" style={{ marginTop: 4 }}>
-              How ParyatakRoute Works
-            </h2>
-            <p className="section-subtitle">
-              From wanderlust dream to verified hour-by-hour itinerary with zero registration obstacles.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--spacing-24)' }}>
-            <div
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                border: '1px solid var(--color-divider-gray)',
-                borderRadius: 'var(--radius-cards)',
-                padding: 'var(--spacing-32) var(--spacing-24)',
-                position: 'relative',
-              }}
-            >
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 'var(--radius-pills)',
-                  backgroundColor: 'var(--color-primary-subtle)',
-                  color: 'var(--color-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: 18,
-                  marginBottom: 16,
-                }}
-              >
-                1
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-ink)', marginBottom: 8 }}>
-                Set Your Travel Style & Dates
-              </h3>
-              <p style={{ fontSize: 14, color: 'var(--color-graphite)', lineHeight: 1.5 }}>
-                Choose your destination, travel pace, group size, and target INR budget. No login or credit card required to begin.
-              </p>
-            </div>
-
-            <div
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                border: '1px solid var(--color-divider-gray)',
-                borderRadius: 'var(--radius-cards)',
-                padding: 'var(--spacing-32) var(--spacing-24)',
-                position: 'relative',
-              }}
-            >
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 'var(--radius-pills)',
-                  backgroundColor: 'var(--color-primary-subtle)',
-                  color: 'var(--color-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: 18,
-                  marginBottom: 16,
-                }}
-              >
-                2
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-ink)', marginBottom: 8 }}>
-                Groq AI Synthesizes Routes
-              </h3>
-              <p style={{ fontSize: 14, color: 'var(--color-graphite)', lineHeight: 1.5 }}>
-                Our engine cross-checks regional waypoints with OpenStreetMap, models driving legs with OSRM, and pulls live forecasts from Open-Meteo.
-              </p>
-            </div>
-
-            <div
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                border: '1px solid var(--color-divider-gray)',
-                borderRadius: 'var(--radius-cards)',
-                padding: 'var(--spacing-32) var(--spacing-24)',
-                position: 'relative',
-              }}
-            >
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 'var(--radius-pills)',
-                  backgroundColor: 'var(--color-primary-subtle)',
-                  color: 'var(--color-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: 18,
-                  marginBottom: 16,
-                }}
-              >
-                3
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-ink)', marginBottom: 8 }}>
-                Surgically Replan & Export PDF
-              </h3>
-              <p style={{ fontSize: 14, color: 'var(--color-graphite)', lineHeight: 1.5 }}>
-                Regenerate single days with custom AI instructions, review deterministic itemized expenses, and download a high-res PDF offline.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ==========================================================================
-          SECTION 6: Editorial Forest Green Feature Banner
-          ========================================================================== */}
-      <section style={{ padding: '0 0 var(--spacing-48) 0' }}>
-        <div className="container">
-          <div
-            style={{
-              backgroundColor: 'var(--color-primary)',
-              borderRadius: 'var(--radius-images)',
-              color: '#ffffff',
-              padding: 'var(--spacing-40)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 'var(--spacing-32)',
-              flexWrap: 'wrap',
-              boxShadow: '0 16px 40px rgba(24, 61, 50, 0.16)',
-            }}
-          >
-            <div style={{ maxWidth: 640 }}>
-              <div style={{ marginBottom: 18 }}>
-                <BrandLogo
-                  variant="dark"
-                  layout="horizontal"
-                  emblemHeight={48}
-                  fontSize={26}
-                  withTagline={true}
-                  clickable={false}
-                />
-              </div>
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  backgroundColor: 'rgba(255,255,255,0.15)',
-                  padding: '4px 12px',
-                  borderRadius: 1000,
-                  fontSize: 13,
-                  fontWeight: 700,
-                  marginBottom: 14,
-                  color: 'var(--color-secondary-accent)',
-                }}
-              >
-                <Sparkles size={14} />
-                <span>Deterministic Budget & Surgical Regeneration</span>
-              </div>
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 32, fontWeight: 700, color: '#ffffff', marginBottom: 12 }}>
-                Intelligent Route Engineering
-              </h3>
-              <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 16, lineHeight: 1.55, marginBottom: 24 }}>
-                Unlike generic chatbots, ParyatakRoute validates waypoints via OpenStreetMap, calculates drive distances via OSRM, pulls live Open-Meteo forecasts, and calculates exact category budget breakdowns with overrun alerts.
-              </p>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <Link
-                  to="/create"
-                  className="btn-accent"
-                  style={{ textDecoration: 'none' }}
-                >
-                  <span>Build My Itinerary</span>
-                  <ArrowRight size={16} />
-                </Link>
-                <Link
-                  to="/explore"
-                  className="btn-secondary"
-                  style={{
-                    backgroundColor: 'transparent',
-                    color: '#ffffff',
-                    borderColor: 'rgba(255,255,255,0.5)',
-                    textDecoration: 'none',
-                  }}
-                >
-                  <span>Explore POIs & Forecasts</span>
-                </Link>
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 14,
-                backgroundColor: 'rgba(255,255,255,0.08)',
-                padding: 24,
-                borderRadius: 'var(--radius-cards)',
-                minWidth: 260,
-                backdropFilter: 'blur(4px)',
-                border: '1px solid rgba(255,255,255,0.15)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <ShieldCheck size={20} color="var(--color-secondary-accent)" />
-                <span style={{ fontSize: 14, fontWeight: 600 }}>Row-Level Security (RLS)</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Zap size={20} color="var(--color-secondary-accent)" />
-                <span style={{ fontSize: 14, fontWeight: 600 }}>Groq AI Llama-3.3 Speed</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <TrendingUp size={20} color="var(--color-secondary-accent)" />
-                <span style={{ fontSize: 14, fontWeight: 600 }}>Live Currency Conversion</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Calendar size={20} color="var(--color-secondary-accent)" />
-                <span style={{ fontSize: 14, fontWeight: 600 }}>Day-by-Day Surgical Replan</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ==========================================================================
-          SECTION 7: App Showcase & Swagger Contract
-          ========================================================================== */}
-      <section className="section-cloud" style={{ borderTop: '1px solid var(--color-divider-gray)' }}>
-        <div className="container">
-          <div className="app-showcase-section">
-            <div>
-              <h2 className="app-showcase-title">
-                Travel Smarter Everywhere You Go
-              </h2>
-              <p className="app-showcase-text">
-                ParyatakRoute turns complex travel logistics into effortless, beautiful daily itineraries. Access your day plans offline, view turn-by-turn driving durations, and chat directly with your AI journey companion.
-              </p>
-
-              {/* QR and Ratings */}
-              <div className="qr-box-row">
-                <div className="qr-code-box" style={{ backgroundColor: 'var(--color-bg-main)' }}>
-                  <QrCode size={64} color="var(--color-primary)" />
-                </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-                    <Star size={16} fill="#f59e0b" color="#f59e0b" />
-                    <Star size={16} fill="#f59e0b" color="#f59e0b" />
-                    <Star size={16} fill="#f59e0b" color="#f59e0b" />
-                    <Star size={16} fill="#f59e0b" color="#f59e0b" />
-                    <Star size={16} fill="#f59e0b" color="#f59e0b" />
-                    <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--color-ink)', marginLeft: 4 }}>
-                      4.9 / 5.0
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 13, color: 'var(--color-graphite)' }}>
-                    Based on 28,400+ traveller itineraries generated
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <a
-                  href="https://paryatakrouteapi.itspranjal.in/docs"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-link-blue"
-                  style={{ fontSize: 15, display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                >
-                  <span>Explore ParyatakRoute Live API Contract & Swagger</span>
-                  <ArrowRight size={15} />
-                </a>
-              </div>
-            </div>
-
-            {/* Overlapping Phone Mockup */}
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div
-                style={{
-                  width: 290,
-                  height: 480,
-                  backgroundColor: 'var(--color-bg-main)',
-                  borderRadius: 36,
-                  border: '8px solid var(--color-primary)',
-                  boxShadow: '0 20px 40px rgba(24, 61, 50, 0.15)',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                {/* Phone Notch */}
-                <div style={{ height: 24, backgroundColor: 'var(--color-primary)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  <div style={{ width: 60, height: 4, backgroundColor: '#333', borderRadius: 2 }} />
-                </div>
-                {/* Phone screen content */}
-                <div style={{ padding: 16, backgroundColor: 'var(--color-bg-main)', flex: 1, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
-                    <BrandLogo variant="light" height={28} clickable={false} />
-                  </div>
-                  <div style={{ backgroundColor: 'var(--color-primary-subtle)', padding: 12, borderRadius: 12, marginBottom: 10 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-primary)' }}>DAY 1 • LEH LADAKH</div>
-                    <div style={{ fontSize: 13, fontWeight: 800, marginTop: 2, color: 'var(--color-text-primary)' }}>Arrival & Acclimatization</div>
-                  </div>
-                  <div style={{ border: '1px solid var(--color-divider-gray)', padding: 10, borderRadius: 12, marginBottom: 8, backgroundColor: '#ffffff' }}>
-                    <div style={{ fontSize: 11, color: 'var(--color-graphite)' }}>09:00 AM • Sightseeing</div>
-                    <div style={{ fontSize: 12, fontWeight: 700 }}>Shanti Stupa Panoramic View</div>
-                    <div style={{ fontSize: 10, color: 'var(--color-success)', fontWeight: 600, marginTop: 4 }}>✓ Verified POI</div>
-                  </div>
-                  <div style={{ border: '1px solid var(--color-divider-gray)', padding: 10, borderRadius: 12, marginBottom: 8, backgroundColor: '#ffffff' }}>
-                    <div style={{ fontSize: 11, color: 'var(--color-graphite)' }}>02:30 PM • Culture</div>
-                    <div style={{ fontSize: 12, fontWeight: 700 }}>Leh Main Bazaar & Tibetan Kitchen</div>
-                    <div style={{ fontSize: 10, color: 'var(--color-graphite)', marginTop: 4 }}>Est. ₹650 / person</div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>

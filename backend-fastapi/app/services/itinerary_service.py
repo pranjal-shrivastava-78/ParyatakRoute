@@ -33,6 +33,21 @@ _in_flight_locks: Dict[str, asyncio.Lock] = {}
 _generation_cache: Dict[str, tuple[ItineraryResponse, float]] = {}
 
 
+def parse_safe_float(val: Any, default: float = 0.0) -> float:
+    if val is None:
+        return default
+    if isinstance(val, (int, float)):
+        return float(val)
+    if isinstance(val, str):
+        import re
+        cleaned = re.sub(r"[^\d.-]", "", val)
+        try:
+            return float(cleaned) if cleaned else default
+        except ValueError:
+            return default
+    return default
+
+
 class ItineraryService:
     async def get_itinerary(self, itinerary_id: str, user_id: Optional[str] = None) -> ItineraryResponse:
         itin = await itinerary_repository.get_by_id(itinerary_id)
@@ -144,23 +159,56 @@ class ItineraryService:
                         longitude=loc_raw.get("longitude"),
                     )
 
-                    # Transport
+                    # Transport parsing with fallback and resilient number conversion
                     trans_raw = a.get("transport") or {}
+                    act_name = str(a.get("name", "Scheduled Activity"))
+                    act_cat = str(a.get("category", "sightseeing")).lower()
+                    act_cost_raw = a.get("estimatedCost", a.get("estimated_cost", a.get("cost", a.get("price"))))
+                    act_cost = parse_safe_float(act_cost_raw, default=0.0)
+
+                    trans_cost_raw = trans_raw.get("estimatedCost", trans_raw.get("estimated_cost", trans_raw.get("cost")))
+                    trans_cost = parse_safe_float(trans_cost_raw, default=0.0)
+
+                    # Bidirectional cost synchronization:
+                    # If activity cost is 0 but transport has positive cost (e.g. flight/train/cab leg), use it
+                    if act_cost <= 0.0 and trans_cost > 0.0:
+                        act_cost = trans_cost
+                    if trans_cost <= 0.0 and act_cost > 0.0 and ("transport" in act_cat or "transit" in act_cat or "flight" in act_name.lower() or "train" in act_name.lower() or "bus" in act_name.lower()):
+                        trans_cost = act_cost
+
+                    starting_city = prefs_dict.get("starting_city")
+                    dest_city = prefs_dict.get("destination")
+                    trans_start = trans_raw.get("startPoint") or trans_raw.get("start_point")
+                    trans_dest = trans_raw.get("destination") or trans_raw.get("end_point")
+
+                    is_intercity = "flight" in act_name.lower() or "train" in act_name.lower() or "bus" in act_name.lower() or "intercity" in act_name.lower()
+                    if not trans_start and starting_city and is_intercity:
+                        trans_start = starting_city
+                    if not trans_dest and dest_city and is_intercity:
+                        trans_dest = dest_city
+
+                    trans_mode = trans_raw.get("mode") or ("transit" if "transport" in act_cat else "walking")
+                    trans_dur = int(parse_safe_float(trans_raw.get("durationMinutes", trans_raw.get("duration_minutes", 15))))
+                    trans_dist = int(parse_safe_float(trans_raw.get("distanceMeters", trans_raw.get("distance_meters", 0)))) or None
+
                     trans = ActivityTransport(
-                        mode=trans_raw.get("mode", "walking"),
+                        mode=trans_mode,
                         details=trans_raw.get("details"),
-                        duration_minutes=int(trans_raw.get("durationMinutes", trans_raw.get("duration_minutes", 15))),
-                        estimated_cost=float(trans_raw.get("estimatedCost", trans_raw.get("estimated_cost", 0.0))),
+                        duration_minutes=trans_dur,
+                        estimated_cost=trans_cost,
+                        distance_meters=trans_dist,
+                        start_point=trans_start,
+                        destination=trans_dest,
                     )
 
                     acts.append(
                         Activity(
-                            name=str(a.get("name", "Scheduled Activity")),
+                            name=act_name,
                             description=str(a.get("description", "Explore the destination attractions.")),
-                            category=str(a.get("category", "sightseeing")),
+                            category=act_cat,
                             start_time=str(a.get("startTime", a.get("start_time", "09:30"))),
-                            duration_minutes=int(a.get("durationMinutes", a.get("duration_minutes", 90))),
-                            estimated_cost=float(a.get("estimatedCost", a.get("estimated_cost", 0.0))),
+                            duration_minutes=int(parse_safe_float(a.get("durationMinutes", a.get("duration_minutes", 90)))),
+                            estimated_cost=act_cost,
                             cost_currency=prefs_dict.get("currency", "INR"),
                             location=loc,
                             transport=trans,
@@ -354,19 +402,28 @@ class ItineraryService:
             for act in d.activities:
                 cost = float(act.estimated_cost or 0.0)
                 category = (act.category or "sightseeing").lower()
-                if "transport" in category or "transit" in category:
+                name_lower = (act.name or "").lower()
+
+                is_transport = (
+                    "transport" in category or "transit" in category or "flight" in category or "train" in category or "bus" in category
+                    or "flight" in name_lower or "train" in name_lower or "bus" in name_lower
+                )
+
+                if is_transport:
                     cats["transport"] += cost
-                elif "hotel" in category or "accommodation" in category or "lodging" in category:
+                elif "hotel" in category or "accommodation" in category or "lodging" in category or "stay" in category or "resort" in category or "check-in" in name_lower:
                     cats["accommodation"] += cost
-                elif "food" in category or "dining" in category or "meal" in category or "restaurant" in category:
+                elif "food" in category or "dining" in category or "meal" in category or "restaurant" in category or "dinner" in name_lower or "lunch" in name_lower or "breakfast" in name_lower:
                     cats["food"] += cost
-                elif "sightseeing" in category or "cultural" in category or "activity" in category or "activities" in category:
+                elif "sightseeing" in category or "cultural" in category or "activity" in category or "activities" in category or "monument" in name_lower or "temple" in name_lower or "museum" in name_lower:
                     cats["activities"] += cost
                 else:
                     cats["miscellaneous"] += cost
 
-                # Include transport leg cost if present
-                if act.transport and act.transport.estimated_cost:
+                # Non-duplication rule:
+                # If the activity is already an intercity flight/train/transit activity, do NOT add its transport leg cost again!
+                # Only add transport leg if the activity is a destination/monument/stay with a separate transit commute to get there.
+                if not is_transport and act.transport and act.transport.estimated_cost:
                     cats["transport"] += float(act.transport.estimated_cost)
 
         total = sum(cats.values())

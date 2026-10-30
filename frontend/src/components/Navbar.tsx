@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
+  Home,
   Compass,
   MapPin,
   Calendar,
@@ -31,8 +32,15 @@ export const Navbar: React.FC = () => {
         <div className="container app-header-inner">
           <BrandLogo variant="light" layout="horizontal" emblemHeight={42} fontSize={22} />
 
-          {/* Desktop Navigation Links */}
+          {/* Desktop Navigation Links: Home, Explore, Plan Trip, AI Assistant, My Trips, Saved */}
           <nav className="nav-links-standard">
+            <Link
+              to="/"
+              className={`nav-link-standard ${location.pathname === '/' ? 'active' : ''}`}
+            >
+              <Home size={16} style={{ display: 'inline', marginRight: 4 }} />
+              Home
+            </Link>
             <Link
               to="/explore"
               className={`nav-link-standard ${location.pathname === '/explore' ? 'active' : ''}`}
@@ -54,24 +62,20 @@ export const Navbar: React.FC = () => {
               <MessageSquare size={16} style={{ display: 'inline', marginRight: 4 }} />
               AI Assistant
             </Link>
-            {isAuthenticated && (
-              <>
-                <Link
-                  to="/trips"
-                  className={`nav-link-standard ${location.pathname.startsWith('/trips') && location.pathname !== '/trips/create' ? 'active' : ''}`}
-                >
-                  <Calendar size={16} style={{ display: 'inline', marginRight: 4 }} />
-                  My Trips
-                </Link>
-                <Link
-                  to="/saved"
-                  className={`nav-link-standard ${location.pathname === '/saved' || location.pathname === '/favourites' ? 'active' : ''}`}
-                >
-                  <Heart size={16} style={{ display: 'inline', marginRight: 4 }} />
-                  Saved
-                </Link>
-              </>
-            )}
+            <Link
+              to="/trips"
+              className={`nav-link-standard ${location.pathname.startsWith('/trips') && location.pathname !== '/trips/create' ? 'active' : ''}`}
+            >
+              <Calendar size={16} style={{ display: 'inline', marginRight: 4 }} />
+              My Trips
+            </Link>
+            <Link
+              to="/saved"
+              className={`nav-link-standard ${location.pathname === '/saved' || location.pathname === '/favourites' ? 'active' : ''}`}
+            >
+              <Heart size={16} style={{ display: 'inline', marginRight: 4 }} />
+              Saved
+            </Link>
           </nav>
 
           {/* Right Actions */}
@@ -141,62 +145,83 @@ export const Navbar: React.FC = () => {
             }}
           >
             <Link
+              to="/"
+              onClick={closeMobileMenu}
+              className={`nav-link-standard ${location.pathname === '/' ? 'active' : ''}`}
+              style={{ padding: '10px 14px' }}
+            >
+              <Home size={16} style={{ display: 'inline', marginRight: 8 }} />
+              Home
+            </Link>
+            <Link
               to="/explore"
               onClick={closeMobileMenu}
-              className="nav-link-standard"
+              className={`nav-link-standard ${location.pathname === '/explore' ? 'active' : ''}`}
               style={{ padding: '10px 14px' }}
             >
               <MapPin size={16} style={{ display: 'inline', marginRight: 8 }} />
-              Explore Destinations
+              Explore
             </Link>
             <Link
-              to="/create"
+              to="/plan-trip"
               onClick={closeMobileMenu}
-              className="nav-link-standard"
+              className={`nav-link-standard ${location.pathname === '/plan-trip' || location.pathname === '/create' ? 'active' : ''}`}
               style={{ padding: '10px 14px' }}
             >
               <Sparkles size={16} style={{ display: 'inline', marginRight: 8 }} />
-              Plan Trip (No Login Required)
+              Plan Trip
             </Link>
             <Link
               to="/chat"
               onClick={closeMobileMenu}
-              className="nav-link-standard"
+              className={`nav-link-standard ${location.pathname === '/chat' ? 'active' : ''}`}
               style={{ padding: '10px 14px' }}
             >
               <MessageSquare size={16} style={{ display: 'inline', marginRight: 8 }} />
-              AI Travel Assistant
+              AI Assistant
+            </Link>
+            <Link
+              to="/trips"
+              onClick={closeMobileMenu}
+              className={`nav-link-standard ${location.pathname.startsWith('/trips') ? 'active' : ''}`}
+              style={{ padding: '10px 14px' }}
+            >
+              <Calendar size={16} style={{ display: 'inline', marginRight: 8 }} />
+              My Trips
+            </Link>
+            <Link
+              to="/saved"
+              onClick={closeMobileMenu}
+              className={`nav-link-standard ${location.pathname === '/saved' || location.pathname === '/favourites' ? 'active' : ''}`}
+              style={{ padding: '10px 14px' }}
+            >
+              <Heart size={16} style={{ display: 'inline', marginRight: 8 }} />
+              Saved
             </Link>
             {isAuthenticated ? (
-              <>
-                <Link
-                  to="/trips"
-                  onClick={closeMobileMenu}
-                  className="nav-link-standard"
-                  style={{ padding: '10px 14px' }}
-                >
-                  <Calendar size={16} style={{ display: 'inline', marginRight: 8 }} />
-                  My Journeys
-                </Link>
-                <Link
-                  to="/saved"
-                  onClick={closeMobileMenu}
-                  className="nav-link-standard"
-                  style={{ padding: '10px 14px' }}
-                >
-                  <Heart size={16} style={{ display: 'inline', marginRight: 8 }} />
-                  Saved Bookmarks
-                </Link>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                 <Link
                   to="/profile"
                   onClick={closeMobileMenu}
-                  className="nav-link-standard"
-                  style={{ padding: '10px 14px' }}
+                  className="btn-secondary"
+                  style={{ flex: 1, textAlign: 'center', padding: '10px' }}
                 >
-                  <User size={16} style={{ display: 'inline', marginRight: 8 }} />
-                  Profile & Settings
+                  <User size={16} style={{ display: 'inline', marginRight: 6 }} />
+                  Profile
                 </Link>
-              </>
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    closeMobileMenu();
+                  }}
+                  className="btn-secondary"
+                  style={{ padding: '10px 14px' }}
+                  title="Sign out"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
             ) : (
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                 <Link

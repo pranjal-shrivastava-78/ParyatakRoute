@@ -13,6 +13,9 @@ export interface DestinationAutocompleteProps {
   error?: string | null;
   className?: string;
   style?: React.CSSProperties;
+  icon?: React.ReactNode;
+  formatOnSelect?: 'name' | 'full';
+  onSelectFormat?: (item: AutocompleteItem) => string;
 }
 
 export const DestinationAutocomplete: React.FC<DestinationAutocompleteProps> = ({
@@ -25,6 +28,9 @@ export const DestinationAutocomplete: React.FC<DestinationAutocompleteProps> = (
   error,
   className = '',
   style = {},
+  icon,
+  formatOnSelect = 'name',
+  onSelectFormat,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<AutocompleteItem[]>([]);
@@ -86,7 +92,15 @@ export const DestinationAutocomplete: React.FC<DestinationAutocompleteProps> = (
   }, []);
 
   const handleSelect = (item: AutocompleteItem) => {
-    onChange(`${item.name}, ${item.state ? `${item.state}, ` : ''}${item.country}`, item);
+    let formatted: string;
+    if (onSelectFormat) {
+      formatted = onSelectFormat(item);
+    } else if (formatOnSelect === 'name') {
+      formatted = item.name;
+    } else {
+      formatted = `${item.name}, ${item.state ? `${item.state}, ` : ''}${item.country}`;
+    }
+    onChange(formatted, item);
     setIsOpen(false);
     setActiveIndex(-1);
     inputRef.current?.blur();
@@ -173,16 +187,33 @@ export const DestinationAutocomplete: React.FC<DestinationAutocompleteProps> = (
           width: '100%',
         }}
       >
-        <MapPin
-          size={18}
-          style={{
-            position: 'absolute',
-            left: 14,
-            color: 'var(--color-primary, #183D32)',
-            pointerEvents: 'none',
-            zIndex: 2,
-          }}
-        />
+        {icon ? (
+          <div
+            style={{
+              position: 'absolute',
+              left: 14,
+              color: 'var(--color-primary, #183D32)',
+              pointerEvents: 'none',
+              zIndex: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {icon}
+          </div>
+        ) : (
+          <MapPin
+            size={18}
+            style={{
+              position: 'absolute',
+              left: 14,
+              color: 'var(--color-primary, #183D32)',
+              pointerEvents: 'none',
+              zIndex: 2,
+            }}
+          />
+        )}
 
         <input
           ref={inputRef}

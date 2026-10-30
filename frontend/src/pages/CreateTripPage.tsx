@@ -16,6 +16,10 @@ import {
   Utensils,
   FileText,
   ArrowRight,
+  Navigation,
+  Plane,
+  Train,
+  Bus,
 } from 'lucide-react';
 import { tripService } from '../services/tripService';
 import { itineraryService } from '../services/itineraryService';
@@ -23,6 +27,7 @@ import { TripCreate } from '../types/api';
 import { useAuth } from '../context/AuthContext';
 import AuthModal from '../components/AuthModal';
 import DestinationAutocomplete from '../components/DestinationAutocomplete';
+import DatePickerField from '../components/DatePickerField';
 
 const INTEREST_TAGS = [
   'Historical Monuments',
@@ -459,10 +464,10 @@ export const CreateTripPage: React.FC = () => {
                 />
               </div>
 
-              {/* Optional Origin City */}
+              {/* Intelligent Origin City Autocomplete */}
               <div className="form-group">
                 <label
-                  htmlFor="starting-city"
+                  htmlFor="origin-autocomplete"
                   style={{
                     display: 'block',
                     fontSize: 13,
@@ -471,24 +476,24 @@ export const CreateTripPage: React.FC = () => {
                     marginBottom: 6,
                   }}
                 >
-                  Origin City (Optional)
+                  Origin City (Departure)
                 </label>
-                <input
-                  id="starting-city"
-                  type="text"
-                  placeholder="e.g. Mumbai, Delhi, London"
+                <DestinationAutocomplete
+                  id="origin-autocomplete"
+                  name="origin"
+                  placeholder="Enter your departure city"
                   value={startingCity}
-                  onChange={(e) => setStartingCity(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    borderRadius: 12,
-                    border: '1px solid var(--color-divider-gray, #D8D4C7)',
-                    backgroundColor: '#ffffff',
-                    fontSize: 15,
-                    color: 'var(--color-text-primary, #26332E)',
-                    outline: 'none',
-                  }}
+                  onChange={(val) => setStartingCity(val)}
+                  icon={
+                    <Navigation
+                      size={18}
+                      style={{
+                        transform: 'rotate(45deg)',
+                        color: 'var(--color-primary, #183D32)',
+                      }}
+                    />
+                  }
+                  formatOnSelect="name"
                 />
               </div>
             </div>
@@ -497,112 +502,353 @@ export const CreateTripPage: React.FC = () => {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
                 gap: 16,
                 marginTop: 16,
               }}
             >
               {/* Departure Date */}
               <div className="form-group">
-                <label
-                  htmlFor="departure-date"
-                  style={{
-                    display: 'block',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: 'var(--color-text-primary, #26332E)',
-                    marginBottom: 6,
+                <DatePickerField
+                  id="departure-date"
+                  name="startDate"
+                  label="Departure Date"
+                  value={startDate}
+                  minDate={new Date().toISOString().split('T')[0]}
+                  placeholder="DD/MM/YYYY"
+                  required
+                  error={errors.startDate}
+                  onChange={(d) => {
+                    setStartDate(d);
+                    if (errors.startDate) {
+                      setErrors((prev) => ({ ...prev, startDate: undefined }));
+                    }
+                    if (endDate && d && endDate <= d) {
+                      const nextDay = new Date(new Date(d).getTime() + 86400000).toISOString().split('T')[0];
+                      setEndDate(nextDay);
+                    }
                   }}
-                >
-                  Departure Date *
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    id="departure-date"
-                    type="date"
-                    value={startDate}
-                    min={new Date().toISOString().split('T')[0]}
-                    placeholder="Select departure date"
-                    onChange={(e) => {
-                      setStartDate(e.target.value);
-                      if (errors.startDate) {
-                        setErrors((prev) => ({ ...prev, startDate: undefined }));
-                      }
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '12px 14px',
-                      borderRadius: 12,
-                      border: errors.startDate
-                        ? '1.5px solid var(--color-error, #D9383A)'
-                        : '1px solid var(--color-divider-gray, #D8D4C7)',
-                      backgroundColor: '#ffffff',
-                      fontSize: 15,
-                      color: 'var(--color-text-primary, #26332E)',
-                      outline: 'none',
-                    }}
-                  />
-                </div>
-                {errors.startDate && (
-                  <p style={{ color: 'var(--color-error, #D9383A)', fontSize: 12, marginTop: 4, fontWeight: 500 }}>
-                    {errors.startDate}
-                  </p>
-                )}
+                />
               </div>
 
               {/* Return Date */}
               <div className="form-group">
-                <label
-                  htmlFor="return-date"
-                  style={{
-                    display: 'block',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: 'var(--color-text-primary, #26332E)',
-                    marginBottom: 6,
+                <DatePickerField
+                  id="return-date"
+                  name="endDate"
+                  label="Return Date"
+                  value={endDate}
+                  minDate={
+                    startDate
+                      ? new Date(new Date(startDate).getTime() + 86400000).toISOString().split('T')[0]
+                      : new Date().toISOString().split('T')[0]
+                  }
+                  placeholder="DD/MM/YYYY"
+                  required
+                  error={errors.endDate}
+                  onChange={(d) => {
+                    setEndDate(d);
+                    if (errors.endDate) {
+                      setErrors((prev) => ({ ...prev, endDate: undefined }));
+                    }
                   }}
-                >
-                  Return Date *
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    id="return-date"
-                    type="date"
-                    value={endDate}
-                    min={startDate || new Date().toISOString().split('T')[0]}
-                    placeholder="Select return date"
-                    onChange={(e) => {
-                      setEndDate(e.target.value);
-                      if (errors.endDate) {
-                        setErrors((prev) => ({ ...prev, endDate: undefined }));
-                      }
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '12px 14px',
-                      borderRadius: 12,
-                      border: errors.endDate
-                        ? '1.5px solid var(--color-error, #D9383A)'
-                        : '1px solid var(--color-divider-gray, #D8D4C7)',
-                      backgroundColor: '#ffffff',
-                      fontSize: 15,
-                      color: 'var(--color-text-primary, #26332E)',
-                      outline: 'none',
-                    }}
-                  />
-                </div>
-                {errors.endDate && (
-                  <p style={{ color: 'var(--color-error, #D9383A)', fontSize: 12, marginTop: 4, fontWeight: 500 }}>
-                    {errors.endDate}
-                  </p>
-                )}
+                />
               </div>
             </div>
           </div>
 
           <div style={{ height: 1, backgroundColor: 'var(--color-divider-gray, #D8D4C7)', marginBottom: 28 }} />
 
-          {/* SECTION 2: BUDGET & TRAVELLERS */}
+          {/* SECTION 2: HOW WOULD YOU LIKE TO TRAVEL? */}
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ marginBottom: 16 }}>
+              <h2
+                style={{
+                  fontFamily: "'Playfair Display', Georgia, serif",
+                  fontSize: 20,
+                  fontWeight: 700,
+                  color: 'var(--color-primary, #183D32)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  margin: '0 0 4px 0',
+                }}
+              >
+                <Plane size={20} color="var(--color-terracotta, #D97745)" />
+                <span>2. How would you like to travel?</span>
+              </h2>
+              <p style={{ fontSize: 13, color: 'var(--color-graphite, #53635B)', margin: 0 }}>
+                Select your preferred mode of transportation to help AI tailor intercity journeys and transit recommendations.
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: 14,
+              }}
+            >
+              {/* Flight Option */}
+              <div
+                id="transport-flight"
+                role="button"
+                tabIndex={0}
+                onClick={() => setTransportPreference('flight')}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setTransportPreference('flight')}
+                style={{
+                  position: 'relative',
+                  padding: '20px 18px',
+                  borderRadius: 16,
+                  cursor: 'pointer',
+                  border: transportPreference === 'flight'
+                    ? '2px solid var(--color-primary, #183D32)'
+                    : '1px solid var(--color-divider-gray, #D8D4C7)',
+                  backgroundColor: transportPreference === 'flight'
+                    ? 'rgba(24, 61, 50, 0.05)'
+                    : '#ffffff',
+                  transition: 'all 0.2s ease',
+                  boxShadow: transportPreference === 'flight'
+                    ? '0 6px 18px rgba(24, 61, 50, 0.08)'
+                    : '0 2px 6px rgba(0,0,0,0.02)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 10,
+                      backgroundColor: transportPreference === 'flight'
+                        ? 'var(--color-primary, #183D32)'
+                        : 'rgba(24, 61, 50, 0.08)',
+                      color: transportPreference === 'flight' ? '#ffffff' : 'var(--color-primary, #183D32)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <Plane size={22} />
+                  </div>
+
+                  {transportPreference === 'flight' ? (
+                    <div
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--color-primary, #183D32)',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Check size={14} />
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: '50%',
+                        border: '1.5px solid var(--color-divider-gray, #D8D4C7)',
+                      }}
+                    />
+                  )}
+                </div>
+
+                <h3
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: 'var(--color-text-primary, #26332E)',
+                    margin: '0 0 4px 0',
+                  }}
+                >
+                  Flight
+                </h3>
+                <p style={{ fontSize: 13, color: 'var(--color-graphite, #53635B)', margin: 0, lineHeight: 1.4 }}>
+                  Faster intercity travel. Suitable for long-distance journeys.
+                </p>
+              </div>
+
+              {/* Train Option */}
+              <div
+                id="transport-train"
+                role="button"
+                tabIndex={0}
+                onClick={() => setTransportPreference('train')}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setTransportPreference('train')}
+                style={{
+                  position: 'relative',
+                  padding: '20px 18px',
+                  borderRadius: 16,
+                  cursor: 'pointer',
+                  border: transportPreference === 'train'
+                    ? '2px solid var(--color-primary, #183D32)'
+                    : '1px solid var(--color-divider-gray, #D8D4C7)',
+                  backgroundColor: transportPreference === 'train'
+                    ? 'rgba(24, 61, 50, 0.05)'
+                    : '#ffffff',
+                  transition: 'all 0.2s ease',
+                  boxShadow: transportPreference === 'train'
+                    ? '0 6px 18px rgba(24, 61, 50, 0.08)'
+                    : '0 2px 6px rgba(0,0,0,0.02)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 10,
+                      backgroundColor: transportPreference === 'train'
+                        ? 'var(--color-primary, #183D32)'
+                        : 'rgba(24, 61, 50, 0.08)',
+                      color: transportPreference === 'train' ? '#ffffff' : 'var(--color-primary, #183D32)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <Train size={22} />
+                  </div>
+
+                  {transportPreference === 'train' ? (
+                    <div
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--color-primary, #183D32)',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Check size={14} />
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: '50%',
+                        border: '1.5px solid var(--color-divider-gray, #D8D4C7)',
+                      }}
+                    />
+                  )}
+                </div>
+
+                <h3
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: 'var(--color-text-primary, #26332E)',
+                    margin: '0 0 4px 0',
+                  }}
+                >
+                  Train
+                </h3>
+                <p style={{ fontSize: 13, color: 'var(--color-graphite, #53635B)', margin: 0, lineHeight: 1.4 }}>
+                  Comfortable and economical travel. Suitable for medium and long-distance journeys.
+                </p>
+              </div>
+
+              {/* Bus Option */}
+              <div
+                id="transport-bus"
+                role="button"
+                tabIndex={0}
+                onClick={() => setTransportPreference('bus')}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setTransportPreference('bus')}
+                style={{
+                  position: 'relative',
+                  padding: '20px 18px',
+                  borderRadius: 16,
+                  cursor: 'pointer',
+                  border: transportPreference === 'bus'
+                    ? '2px solid var(--color-primary, #183D32)'
+                    : '1px solid var(--color-divider-gray, #D8D4C7)',
+                  backgroundColor: transportPreference === 'bus'
+                    ? 'rgba(24, 61, 50, 0.05)'
+                    : '#ffffff',
+                  transition: 'all 0.2s ease',
+                  boxShadow: transportPreference === 'bus'
+                    ? '0 6px 18px rgba(24, 61, 50, 0.08)'
+                    : '0 2px 6px rgba(0,0,0,0.02)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 10,
+                      backgroundColor: transportPreference === 'bus'
+                        ? 'var(--color-primary, #183D32)'
+                        : 'rgba(24, 61, 50, 0.08)',
+                      color: transportPreference === 'bus' ? '#ffffff' : 'var(--color-primary, #183D32)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <Bus size={22} />
+                  </div>
+
+                  {transportPreference === 'bus' ? (
+                    <div
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--color-primary, #183D32)',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Check size={14} />
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: '50%',
+                        border: '1.5px solid var(--color-divider-gray, #D8D4C7)',
+                      }}
+                    />
+                  )}
+                </div>
+
+                <h3
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: 'var(--color-text-primary, #26332E)',
+                    margin: '0 0 4px 0',
+                  }}
+                >
+                  Bus
+                </h3>
+                <p style={{ fontSize: 13, color: 'var(--color-graphite, #53635B)', margin: 0, lineHeight: 1.4 }}>
+                  Flexible and budget-friendly travel. Suitable for short and medium-distance journeys.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ height: 1, backgroundColor: 'var(--color-divider-gray, #D8D4C7)', marginBottom: 28 }} />
+
+          {/* SECTION 3: BUDGET & TRAVELLERS */}
           <div style={{ marginBottom: 32 }}>
             <h2
               style={{
@@ -617,7 +863,7 @@ export const CreateTripPage: React.FC = () => {
               }}
             >
               <DollarSign size={20} color="var(--color-terracotta, #D97745)" />
-              <span>2. Budget & Party Size</span>
+              <span>3. Budget & Party Size</span>
             </h2>
 
             <div
@@ -827,7 +1073,7 @@ export const CreateTripPage: React.FC = () => {
 
           <div style={{ height: 1, backgroundColor: 'var(--color-divider-gray, #D8D4C7)', marginBottom: 28 }} />
 
-          {/* SECTION 3: INTERESTS & PREFERENCES */}
+          {/* SECTION 4: INTERESTS & PREFERENCES */}
           <div style={{ marginBottom: 32 }}>
             <h2
               style={{
@@ -842,7 +1088,7 @@ export const CreateTripPage: React.FC = () => {
               }}
             >
               <Tag size={20} color="var(--color-terracotta, #D97745)" />
-              <span>3. Experiences & Trip Highlights</span>
+              <span>4. Experiences & Trip Highlights</span>
             </h2>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>

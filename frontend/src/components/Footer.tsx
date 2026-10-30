@@ -1,87 +1,10 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Compass, ShieldCheck, Heart, Sparkles } from 'lucide-react';
+import { ShieldCheck, FileCode } from 'lucide-react';
 import BrandLogo from './BrandLogo';
 
 export const Footer: React.FC = () => {
   return (
     <footer style={{ marginTop: 'auto' }}>
-      {/* Link Directory Band on #ededed per DESIGN.md */}
-      <div className="link-directory-band">
-        <div className="container">
-          <div style={{ marginBottom: 'var(--spacing-28)' }}>
-            <h3
-              style={{
-                fontSize: 'var(--text-section-heading)',
-                lineHeight: 'var(--leading-section-heading)',
-                fontWeight: 'var(--font-weight-bold)',
-                color: 'var(--color-ink)',
-                marginBottom: 6,
-              }}
-            >
-              Popular Journeys & Destinations
-            </h3>
-            <p style={{ fontSize: 14, color: 'var(--color-graphite)' }}>
-              Explore AI-curated itineraries across high-altitude peaks, coastal paradises, and heritage circuits.
-            </p>
-          </div>
-
-          <div className="directory-columns">
-            <div>
-              <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-ink)', marginBottom: 12 }}>
-                Northern Highlands
-              </h4>
-              <ul className="directory-list">
-                <li><Link to="/explore?query=Leh Ladakh" className="directory-link">Leh Ladakh Circuit</Link></li>
-                <li><Link to="/explore?query=Manali Himachal" className="directory-link">Manali & Solang Valley</Link></li>
-                <li><Link to="/explore?query=Srinagar Kashmir" className="directory-link">Srinagar & Dal Lake</Link></li>
-                <li><Link to="/explore?query=Rishikesh Uttarakhand" className="directory-link">Rishikesh Adventure</Link></li>
-                <li><Link to="/explore?query=Spiti Valley" className="directory-link">Spiti Trans-Himalaya</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-ink)', marginBottom: 12 }}>
-                Royal & Cultural Heritage
-              </h4>
-              <ul className="directory-list">
-                <li><Link to="/explore?query=Jaipur Rajasthan" className="directory-link">Jaipur Pink City</Link></li>
-                <li><Link to="/explore?query=Udaipur Lakes" className="directory-link">Udaipur City of Lakes</Link></li>
-                <li><Link to="/explore?query=Varanasi Ghats" className="directory-link">Varanasi Spiritual Ghats</Link></li>
-                <li><Link to="/explore?query=Hampi Karnataka" className="directory-link">Hampi Vijayanagara Ruins</Link></li>
-                <li><Link to="/explore?query=Agra Taj Mahal" className="directory-link">Agra Architectural Wonders</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-ink)', marginBottom: 12 }}>
-                Coastal & Tropical
-              </h4>
-              <ul className="directory-list">
-                <li><Link to="/explore?query=Goa Beaches" className="directory-link">North & South Goa</Link></li>
-                <li><Link to="/explore?query=Munnar Kerala" className="directory-link">Munnar Tea Plantations</Link></li>
-                <li><Link to="/explore?query=Alleppey Backwaters" className="directory-link">Alleppey Houseboat Trail</Link></li>
-                <li><Link to="/explore?query=Andaman Islands" className="directory-link">Havelock & Radhanagar</Link></li>
-                <li><Link to="/explore?query=Pondicherry French Quarter" className="directory-link">Puducherry Promenade</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-ink)', marginBottom: 12 }}>
-                Platform & Data
-              </h4>
-              <ul className="directory-list">
-                <li><a href="https://paryatakrouteapi.itspranjal.in/docs" target="_blank" rel="noopener noreferrer" className="directory-link">Live API Swagger Docs</a></li>
-                <li><Link to="/create" className="directory-link">AI Itinerary Planner</Link></li>
-                <li><Link to="/explore" className="directory-link">Nominatim Place Geocoding</Link></li>
-                <li><Link to="/explore" className="directory-link">Open-Meteo 7-Day Forecast</Link></li>
-                <li><Link to="/profile" className="directory-link">Account & Security</Link></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Baseline disclaimer and attribution */}
       <div style={{ backgroundColor: 'var(--color-bg-main)', borderTop: '1px solid var(--color-divider-gray)', padding: '24px 0' }}>
         <div className="container" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
@@ -101,6 +24,48 @@ export const Footer: React.FC = () => {
             <span>
               Geospatial data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors
             </span>
+            <a
+              href="https://github.com/pranjal-shrivastava-78/ParyatakRoute"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub Repository"
+              title="GitHub Repository"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                color: 'var(--color-graphite)',
+                textDecoration: 'none',
+                transition: 'color 0.15s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-primary)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-graphite)')}
+            >
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ flexShrink: 0 }}>
+                <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+              </svg>
+              <span>GitHub</span>
+            </a>
+            <a
+              href="https://paryatakrouteapi.itspranjal.in/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Backend API Documentation"
+              title="Backend API Documentation"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                color: 'var(--color-graphite)',
+                textDecoration: 'none',
+                transition: 'color 0.15s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-primary)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-graphite)')}
+            >
+              <FileCode size={14} style={{ flexShrink: 0 }} />
+              <span>API Docs</span>
+            </a>
           </div>
         </div>
       </div>

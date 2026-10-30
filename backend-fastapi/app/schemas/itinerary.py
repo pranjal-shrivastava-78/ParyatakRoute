@@ -15,11 +15,15 @@ class ActivityLocation(BaseModel):
 
 
 class ActivityTransport(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     mode: Optional[str] = None
     details: Optional[str] = None
-    duration_minutes: Optional[int] = None
-    estimated_cost: Optional[float] = 0.0
-    distance_meters: Optional[int] = None
+    duration_minutes: Optional[int] = Field(default=None, alias="durationMinutes")
+    estimated_cost: Optional[float] = Field(default=0.0, alias="estimatedCost")
+    distance_meters: Optional[int] = Field(default=None, alias="distanceMeters")
+    start_point: Optional[str] = Field(default=None, alias="startPoint")
+    destination: Optional[str] = None
 
 
 class Activity(BaseModel):

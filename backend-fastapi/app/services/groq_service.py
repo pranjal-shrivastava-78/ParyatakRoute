@@ -39,10 +39,21 @@ class GroqService:
     async def _call_with_retry(self, fn, *args, **kwargs) -> Any:
         """Execute a Groq API call with bounded exponential backoff and jitter."""
         base_delay = 1.0
+        fallback_models = ["openai/gpt-oss-20b", "qwen/qwen3.8-27b"]
+
         for attempt in range(self.max_retries):
             try:
                 return await fn(*args, **kwargs)
             except RateLimitError as e:
+                err_msg = str(e).lower()
+                # If daily token quota (TPD) was reached for current model, switch to fallback model
+                if ("tokens per day" in err_msg or "tpd" in err_msg) and fallback_models:
+                    next_model = fallback_models.pop(0)
+                    if next_model != kwargs.get("model"):
+                        logger.warning(f"[Groq AI] Model {kwargs.get('model')} daily token quota reached. Falling back to {next_model}...")
+                        kwargs["model"] = next_model
+                        continue
+
                 if attempt == self.max_retries - 1:
                     logger.error(f"[Groq AI] Rate limit exceeded after {self.max_retries} attempts: {e}")
                     raise AppException(
@@ -152,6 +163,8 @@ class GroqService:
         total_days = len(expected_dates)
         schedule_guide = "\n".join(f"  - Day {i + 1}: {d}" for i, d in enumerate(expected_dates))
 
+        transport_pref = preferences.get("transport_preference") or "flight"
+
         system_prompt = (
             "You are ParyatakRoute AI, an expert travel planner. "
             "Output ONLY valid JSON matching this schema:\n"
@@ -173,7 +186,7 @@ class GroqService:
             '          "estimatedCost": 500,\n'
             f'          "costCurrency": "{currency}",\n'
             '          "location": {"name": "string", "latitude": null, "longitude": null},\n'
-            '          "transport": {"mode": "string", "details": "string", "durationMinutes": 15, "estimatedCost": 100},\n'
+            '          "transport": {"mode": "flight | train | bus | taxi | walking", "details": "string", "startPoint": "string", "destination": "string", "durationMinutes": 15, "estimatedCost": 100},\n'
             '          "sourceStatus": "unverified"\n'
             "        }\n"
             "      ]\n"
@@ -188,10 +201,11 @@ class GroqService:
             f"Dates:\n{schedule_guide}\n"
             f"Budget: {currency} {budget} | Travellers: {travellers} | Style: {travel_style}\n"
             f"Interests: {interests_str}\n"
+            f"Preferred Transport Mode: {transport_pref.upper()} (prioritize {transport_pref} for intercity journey from {starting_city or 'origin'} to {destination} with estimated fare and duration)\n"
             f"{f'Origin: {starting_city}' if starting_city else ''}\n"
             f"{f'Dietary: {diet}' if diet else ''}\n"
             f"{f'Special Notes: {notes}' if notes else ''}\n"
-            f"Rules: Exactly {total_days} days. Realistic pacing with HH:MM 24-hr times. Sequential non-overlapping activities. Output valid JSON object."
+            f"Rules: Exactly {total_days} days. Realistic pacing with HH:MM 24-hr times. Sequential non-overlapping activities. For intercity legs, include realistic transit activity cards with estimated fares. Output valid JSON object."
         )
 
         messages = [
@@ -269,6 +283,8 @@ class GroqService:
             chunk_day_nums = list(range(day_offset, day_offset + len(chunk_dates)))
             schedule_guide = "\n".join(f"  - Day {num}: {d}" for num, d in zip(chunk_day_nums, chunk_dates))
 
+            transport_pref = preferences.get("transport_preference") or "flight"
+
             if is_first:
                 system_prompt = (
                     "You are ParyatakRoute AI, an expert travel planner. "
@@ -291,7 +307,7 @@ class GroqService:
                     '          "estimatedCost": 500,\n'
                     f'          "costCurrency": "{currency}",\n'
                     '          "location": {"name": "string", "latitude": null, "longitude": null},\n'
-                    '          "transport": {"mode": "string", "details": "string", "durationMinutes": 15, "estimatedCost": 100},\n'
+                    '          "transport": {"mode": "flight | train | bus | taxi | walking", "details": "string", "startPoint": "string", "destination": "string", "durationMinutes": 15, "estimatedCost": 100},\n'
                     '          "sourceStatus": "unverified"\n'
                     "        }\n"
                     "      ]\n"
@@ -305,10 +321,11 @@ class GroqService:
                     f"Dates:\n{schedule_guide}\n"
                     f"Budget: {currency} {budget} | Travellers: {travellers} | Style: {travel_style}\n"
                     f"Interests: {interests_str}\n"
+                    f"Preferred Transport Mode: {transport_pref.upper()} (prioritize {transport_pref} for intercity journey from {starting_city or 'origin'} to {destination})\n"
                     f"{f'Origin: {starting_city}' if starting_city else ''}\n"
                     f"{f'Dietary: {diet}' if diet else ''}\n"
                     f"{f'Special Notes: {notes}' if notes else ''}\n"
-                    f"Rules: Exactly {len(chunk_dates)} days numbered {chunk_day_nums[0]} to {chunk_day_nums[-1]}. Sequential non-overlapping activities. Output valid JSON object."
+                    f"Rules: Exactly {len(chunk_dates)} days numbered {chunk_day_nums[0]} to {chunk_day_nums[-1]}. Sequential non-overlapping activities. For intercity legs, include realistic transit activity cards with estimated fares. Output valid JSON object."
                 )
             else:
                 system_prompt = (

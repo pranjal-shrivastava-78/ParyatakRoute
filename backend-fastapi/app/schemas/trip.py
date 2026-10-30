@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from typing import List, Optional, Literal
-from pydantic import BaseModel, Field, model_validator, ConfigDict
+from pydantic import BaseModel, Field, model_validator, ConfigDict, AliasChoices
 
 
 TravelStyle = str
@@ -9,7 +9,7 @@ TripStatus = Literal["draft", "planned", "completed", "cancelled"]
 
 class TripBase(BaseModel):
     destination: str = Field(min_length=2, max_length=200, description="Target city or region", examples=["Goa, India"])
-    starting_city: Optional[str] = Field(default=None, max_length=200, description="Origin city", examples=["Mumbai"])
+    starting_city: Optional[str] = Field(default=None, max_length=200, validation_alias=AliasChoices("starting_city", "origin_city"), description="Origin city", examples=["Mumbai"])
     start_date: date = Field(..., description="Trip start date (YYYY-MM-DD)", examples=["2026-11-15"])
     end_date: date = Field(..., description="Trip end date (YYYY-MM-DD)", examples=["2026-11-20"])
     budget: float = Field(ge=0, description="Total estimated trip budget", examples=[35000.0])

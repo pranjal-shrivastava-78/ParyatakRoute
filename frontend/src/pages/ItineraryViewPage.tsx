@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Sparkles,
@@ -25,6 +25,13 @@ import {
   Navigation,
   Globe,
   Compass,
+  Plane,
+  Train,
+  Bus,
+  Hotel,
+  Utensils,
+  Tag,
+  Users,
 } from 'lucide-react';
 import { itineraryService } from '../services/itineraryService';
 import { tripService } from '../services/tripService';
@@ -44,6 +51,162 @@ import TripEditModal from '../components/TripEditModal';
 import ChatDrawer from '../components/ChatDrawer';
 import AuthModal from '../components/AuthModal';
 import { useAuth } from '../context/AuthContext';
+/**
+ * Currency Symbol helper
+ */
+export const getCurrencySymbol = (curr?: string): string => {
+  if (!curr || curr === 'INR') return '₹';
+  if (curr === 'USD') return '$';
+  if (curr === 'EUR') return '€';
+  if (curr === 'GBP') return '£';
+  return curr;
+};
+
+/**
+ * Robust cost resolver supporting camelCase, snake_case, string parsing,
+ * nested transport fallbacks, and distinguishing genuine 0 from missing estimate.
+ */
+export const getActivityCost = (act: any): { cost: number | null; isFree: boolean; isMissing: boolean } => {
+  if (!act) return { cost: null, isFree: false, isMissing: true };
+
+  // 1. Direct activity cost checks (handles camelCase and snake_case)
+  let raw = act.estimatedCost ?? act.estimated_cost ?? act.cost ?? act.price;
+
+  // 2. If null, undefined, or empty string, check transport object
+  if (raw === undefined || raw === null || raw === '') {
+    if (act.transport) {
+      raw = act.transport.estimatedCost ?? act.transport.estimated_cost ?? act.transport.cost ?? act.transport.price;
+    }
+  }
+
+  if (raw === undefined || raw === null || raw === '') {
+    return { cost: null, isFree: false, isMissing: true };
+  }
+
+  // 3. Convert numeric strings into numbers safely (stripping currency signs, commas, whitespace)
+  let num: number;
+  if (typeof raw === 'number') {
+    num = raw;
+  } else if (typeof raw === 'string') {
+    const cleaned = raw.replace(/[^0-9.-]/g, '');
+    num = cleaned !== '' ? parseFloat(cleaned) : NaN;
+  } else {
+    num = NaN;
+  }
+
+  if (isNaN(num)) {
+    return { cost: null, isFree: false, isMissing: true };
+  }
+
+  // 4. If direct cost is 0, check if transport has an actual cost (e.g. flight/taxi)
+  if (num === 0 && act.transport) {
+    const transRaw = act.transport.estimatedCost ?? act.transport.estimated_cost ?? act.transport.cost;
+    if (transRaw !== undefined && transRaw !== null && transRaw !== '') {
+      const transNum = typeof transRaw === 'number' ? transRaw : parseFloat(String(transRaw).replace(/[^0-9.-]/g, ''));
+      if (!isNaN(transNum) && transNum > 0) {
+        return { cost: transNum, isFree: false, isMissing: false };
+      }
+    }
+  }
+
+  // 5. Genuinely 0 (e.g. free monument entrance, public promenade)
+  if (num === 0) {
+    return { cost: 0, isFree: true, isMissing: false };
+  }
+
+  return { cost: num, isFree: false, isMissing: false };
+};
+
+/**
+ * Format duration in minutes to human-readable string (e.g. "2 hours 30 minutes")
+ */
+export const formatJourneyDuration = (minutes?: number | null): string => {
+  if (!minutes || minutes <= 0) return 'Estimated on departure';
+  const hrs = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hrs > 0 && mins > 0) {
+    return `${hrs} hour${hrs > 1 ? 's' : ''} ${mins} minute${mins > 1 ? 's' : ''}`;
+  } else if (hrs > 0) {
+    return `${hrs} hour${hrs > 1 ? 's' : ''}`;
+  }
+  return `${mins} minute${mins > 1 ? 's' : ''}`;
+};
+
+/**
+ * Extract rich transportation details for relevant itinerary activities
+ */
+export const getTransportDetails = (act: any, startingCity?: string, destinationCity?: string) => {
+  if (!act) return null;
+  const trans = act.transport || {};
+  const cat = (act.category || '').toLowerCase();
+  const name = (act.name || '').toLowerCase();
+  const desc = (act.description || '').toLowerCase();
+
+  const isTransport =
+    cat === 'transport' ||
+    cat === 'transit' ||
+    Boolean(trans.mode) ||
+    name.includes('flight') ||
+    name.includes('train') ||
+    name.includes('bus') ||
+    desc.includes('flight') ||
+    desc.includes('train') ||
+    desc.includes('bus');
+
+  if (!isTransport && !trans.mode) return null;
+
+  // Determine mode
+  let mode = (trans.mode || '').toLowerCase();
+  if (!mode) {
+    if (name.includes('flight') || desc.includes('flight')) mode = 'flight';
+    else if (name.includes('train') || desc.includes('train') || name.includes('rail')) mode = 'train';
+    else if (name.includes('bus') || desc.includes('bus')) mode = 'bus';
+    else if (name.includes('cab') || name.includes('taxi')) mode = 'taxi';
+    else mode = 'transit';
+  }
+
+  // Duration
+  const durationMinutes =
+    trans.durationMinutes ?? trans.duration_minutes ?? act.durationMinutes ?? act.duration_minutes ?? null;
+
+  // Fare
+  let fare: number | null = null;
+  const rawFare = trans.estimatedCost ?? trans.estimated_cost ?? trans.cost ?? act.estimatedCost ?? act.estimated_cost;
+  if (rawFare !== undefined && rawFare !== null && rawFare !== '') {
+    const num = typeof rawFare === 'number' ? rawFare : parseFloat(String(rawFare).replace(/[^0-9.-]/g, ''));
+    if (!isNaN(num) && num > 0) fare = num;
+  }
+
+  // Start & Destination points
+  let startPoint = trans.startPoint || trans.start_point;
+  let endPoint = trans.destination || trans.end_point;
+
+  if (!startPoint || !endPoint) {
+    const arrowMatch = act.name.match(/(.+?)\s*(?:→|->|to)\s*(.+)/i);
+    if (arrowMatch) {
+      if (!startPoint) startPoint = arrowMatch[1].replace(/flight|train|bus|transit|express/gi, '').trim();
+      if (!endPoint) endPoint = arrowMatch[2].trim();
+    }
+  }
+
+  if (mode === 'flight' || mode === 'train' || mode === 'bus') {
+    if (!startPoint && startingCity) startPoint = startingCity;
+    if (!endPoint && destinationCity) endPoint = destinationCity;
+  }
+
+  const distanceMeters = trans.distanceMeters ?? trans.distance_meters;
+  const distanceKm = distanceMeters ? Math.round(distanceMeters / 1000) : null;
+
+  return {
+    mode,
+    durationMinutes,
+    fare,
+    startPoint,
+    endPoint,
+    distanceKm,
+    details: trans.details,
+  };
+};
 
 export const ItineraryViewPage: React.FC = () => {
   const { itineraryId } = useParams<{ itineraryId: string }>();
@@ -340,8 +503,175 @@ export const ItineraryViewPage: React.FC = () => {
     );
   }
 
+  // Comprehensive Trip-Level Budget Calculation (strictly sum of activities across all days without double-counting)
+  const tripBudgetSummary = useMemo(() => {
+    if (!itinerary?.days) return null;
+
+    const categories = {
+      flights: 0,
+      trainBus: 0,
+      accommodation: 0,
+      food: 0,
+      localTransport: 0,
+      activities: 0,
+      miscellaneous: 0,
+    };
+
+    const hasItems = {
+      flights: false,
+      trainBus: false,
+      accommodation: false,
+      food: false,
+      localTransport: false,
+      activities: false,
+      miscellaneous: false,
+    };
+
+    let totalTripCost = 0;
+    let hasAnyCost = false;
+
+    itinerary.days.forEach((day: any) => {
+      (day.activities || []).forEach((act: any) => {
+        const costInfo = getActivityCost(act);
+        const cost = costInfo.cost ?? 0;
+        if (costInfo.cost !== null) hasAnyCost = true;
+
+        const cat = (act.category || '').toLowerCase();
+        const name = (act.name || '').toLowerCase();
+        const transMode = (act.transport?.mode || '').toLowerCase();
+
+        // 1. Flights
+        if (
+          transMode === 'flight' ||
+          transMode === 'plane' ||
+          name.includes('flight') ||
+          cat.includes('flight')
+        ) {
+          categories.flights += cost;
+          hasItems.flights = true;
+          totalTripCost += cost;
+        }
+        // 2. Train / Bus
+        else if (
+          transMode === 'train' ||
+          transMode === 'bus' ||
+          transMode === 'rail' ||
+          name.includes('train') ||
+          name.includes('bus') ||
+          cat.includes('train') ||
+          cat.includes('bus')
+        ) {
+          categories.trainBus += cost;
+          hasItems.trainBus = true;
+          totalTripCost += cost;
+        }
+        // 3. Accommodation
+        else if (
+          cat.includes('hotel') ||
+          cat.includes('accommodation') ||
+          cat.includes('stay') ||
+          cat.includes('lodging') ||
+          cat.includes('resort') ||
+          name.includes('hotel') ||
+          name.includes('resort') ||
+          name.includes('check-in')
+        ) {
+          categories.accommodation += cost;
+          hasItems.accommodation = true;
+          totalTripCost += cost;
+        }
+        // 4. Food & Dining
+        else if (
+          cat.includes('food') ||
+          cat.includes('dining') ||
+          cat.includes('meal') ||
+          cat.includes('restaurant') ||
+          name.includes('dinner') ||
+          name.includes('lunch') ||
+          name.includes('breakfast') ||
+          name.includes('cafe') ||
+          name.includes('tasting')
+        ) {
+          categories.food += cost;
+          hasItems.food = true;
+          totalTripCost += cost;
+        }
+        // 5. Local Transportation
+        else if (
+          cat.includes('transport') ||
+          cat.includes('transit') ||
+          transMode === 'taxi' ||
+          transMode === 'cab' ||
+          transMode === 'auto' ||
+          transMode === 'metro' ||
+          name.includes('taxi') ||
+          name.includes('cab') ||
+          name.includes('transit')
+        ) {
+          categories.localTransport += cost;
+          hasItems.localTransport = true;
+          totalTripCost += cost;
+        }
+        // 6. Activities & Attractions
+        else if (
+          cat.includes('sightseeing') ||
+          cat.includes('activity') ||
+          cat.includes('cultural') ||
+          cat.includes('adventure') ||
+          name.includes('visit') ||
+          name.includes('explore') ||
+          name.includes('temple') ||
+          name.includes('fort') ||
+          name.includes('palace') ||
+          name.includes('museum')
+        ) {
+          categories.activities += cost;
+          hasItems.activities = true;
+          totalTripCost += cost;
+
+          // Non-duplication rule: only add transport leg if activity itself wasn't already transport!
+          if (act.transport) {
+            const transRaw = act.transport.estimatedCost ?? act.transport.estimated_cost;
+            if (transRaw) {
+              const transCost = typeof transRaw === 'number' ? transRaw : parseFloat(String(transRaw).replace(/[^0-9.-]/g, ''));
+              if (!isNaN(transCost) && transCost > 0) {
+                categories.localTransport += transCost;
+                hasItems.localTransport = true;
+                totalTripCost += transCost;
+              }
+            }
+          }
+        }
+        // 7. Miscellaneous
+        else {
+          categories.miscellaneous += cost;
+          hasItems.miscellaneous = true;
+          totalTripCost += cost;
+        }
+      });
+    });
+
+    const travellersCount = Math.max(1, trip?.travellers || (trip as any)?.travelers_count || 1);
+    const perPersonCost = Math.round(totalTripCost / travellersCount);
+    const userBudget = trip?.budget ? Number(trip.budget) : null;
+    const budgetRemaining = userBudget !== null ? userBudget - totalTripCost : null;
+    const currency = itinerary.budget?.currency || trip?.currency || 'INR';
+
+    return {
+      totalTripCost,
+      hasAnyCost,
+      perPersonCost,
+      travellersCount,
+      userBudget,
+      budgetRemaining,
+      currency,
+      categories,
+      hasItems,
+    };
+  }, [itinerary, trip]);
+
   const selectedDay =
-    itinerary.days?.find((d) => d.day_number === selectedDayNumber) ||
+    itinerary.days?.find((d: any) => (d.day_number ?? d.dayNumber) === selectedDayNumber) ||
     itinerary.days?.[0] || { day_number: 1, date: '', activities: [] };
 
   const isGuestItinerary =
@@ -643,82 +973,271 @@ export const ItineraryViewPage: React.FC = () => {
           </div>
         )}
 
-        {/* Deterministic Budget Breakdown Card */}
-        {budgetAnalysis && (
+        {/* Trip-Level Budget Summary & Category Breakdown */}
+        {tripBudgetSummary && (
           <div
             style={{
-              backgroundColor: 'var(--surface-cloud-surface)',
-              border: '1px solid var(--color-divider-gray)',
-              borderRadius: 'var(--radius-cards)',
+              backgroundColor: '#ffffff',
+              border: '1px solid var(--color-divider-gray, #D8D4C7)',
+              borderRadius: 20,
               padding: 24,
               marginBottom: 28,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            {/* Header with Title and Target Status */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 18 }}>
               <div>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-ink)' }}>
-                  Deterministic Budget Analysis
+                <h2
+                  style={{
+                    fontFamily: "'Playfair Display', Georgia, serif",
+                    fontSize: 22,
+                    fontWeight: 800,
+                    color: 'var(--color-primary, #183D32)',
+                    margin: '0 0 4px 0',
+                  }}
+                >
+                  Trip Budget Summary & Expense Breakdown
                 </h2>
-                <p style={{ fontSize: 13, color: 'var(--color-graphite)' }}>
-                  Calculated across activities, scheduled transport legs, and daily allowances.
+                <p style={{ fontSize: 13, color: 'var(--color-graphite, #53635B)', margin: 0 }}>
+                  Sum of verified activity costs across all itinerary days with zero duplicate transit fees.
                 </p>
               </div>
 
-              {budgetAnalysis.is_over_budget ? (
-                <span className="badge badge-unverified" style={{ padding: '6px 12px', fontSize: 13 }}>
-                  <AlertTriangle size={15} />
-                  <span>Over Target by {budgetAnalysis.currency} {Math.round(budgetAnalysis.difference).toLocaleString()}</span>
-                </span>
-              ) : (
-                <span className="badge badge-verified" style={{ padding: '6px 12px', fontSize: 13 }}>
-                  <ShieldCheck size={15} />
-                  <span>Within Budget Target (Variance: {budgetAnalysis.currency} {Math.round(budgetAnalysis.difference).toLocaleString()})</span>
-                </span>
+              {tripBudgetSummary.userBudget !== null && (
+                tripBudgetSummary.budgetRemaining !== null && tripBudgetSummary.budgetRemaining >= 0 ? (
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 14px',
+                      borderRadius: 20,
+                      backgroundColor: 'rgba(24, 61, 50, 0.08)',
+                      border: '1px solid var(--color-primary, #183D32)',
+                      color: 'var(--color-primary, #183D32)',
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
+                  >
+                    <ShieldCheck size={16} />
+                    <span>
+                      Within Budget • {getCurrencySymbol(tripBudgetSummary.currency)}{' '}
+                      {Math.round(tripBudgetSummary.budgetRemaining).toLocaleString()} remaining
+                    </span>
+                  </span>
+                ) : (
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 14px',
+                      borderRadius: 20,
+                      backgroundColor: 'rgba(217, 56, 58, 0.08)',
+                      border: '1px solid var(--color-error, #D9383A)',
+                      color: 'var(--color-error, #D9383A)',
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
+                  >
+                    <AlertTriangle size={16} />
+                    <span>
+                      Exceeds Target by {getCurrencySymbol(tripBudgetSummary.currency)}{' '}
+                      {Math.round(Math.abs(tripBudgetSummary.budgetRemaining || 0)).toLocaleString()}
+                    </span>
+                  </span>
+                )
               )}
             </div>
 
-            {/* Budget Categories Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 14 }}>
-              <div style={{ backgroundColor: '#fff', border: '1px solid var(--color-divider-gray)', borderRadius: 12, padding: 14 }}>
-                <div style={{ fontSize: 12, color: 'var(--color-graphite)', fontWeight: 600 }}>Total Estimated</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-ink)', marginTop: 4 }}>
-                  {budgetAnalysis.currency} {Math.round(budgetAnalysis.total_estimated).toLocaleString()}
+            {/* Top Stat Highlights: Total Trip Budget & Per-Person Budget */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                gap: 14,
+                marginBottom: 20,
+              }}
+            >
+              {/* Total Estimated Trip Cost */}
+              <div
+                style={{
+                  backgroundColor: 'var(--color-bg-main, #F7F5EF)',
+                  border: '1.5px solid var(--color-divider-gray, #D8D4C7)',
+                  borderRadius: 14,
+                  padding: '16px 18px',
+                }}
+              >
+                <div style={{ fontSize: 12, color: 'var(--color-graphite, #53635B)', fontWeight: 600, textTransform: 'uppercase' }}>
+                  Total Trip Cost
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--color-graphite)', marginTop: 2 }}>
-                  Target: {budgetAnalysis.currency} {Math.round(budgetAnalysis.trip_budget).toLocaleString()}
+                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-primary, #183D32)', marginTop: 4 }}>
+                  {tripBudgetSummary.hasAnyCost
+                    ? `${getCurrencySymbol(tripBudgetSummary.currency)} ${tripBudgetSummary.totalTripCost.toLocaleString()}`
+                    : 'Not estimated'}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-graphite, #53635B)', marginTop: 2 }}>
+                  Sum of all activities & transit
                 </div>
               </div>
 
-              <div style={{ backgroundColor: '#fff', border: '1px solid var(--color-divider-gray)', borderRadius: 12, padding: 14 }}>
-                <div style={{ fontSize: 12, color: 'var(--color-graphite)', fontWeight: 600 }}>Transport</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-hopper-blue)', marginTop: 4 }}>
-                  {budgetAnalysis.currency} {Math.round(budgetAnalysis.categories.transport).toLocaleString()}
+              {/* Per-Person Cost */}
+              <div
+                style={{
+                  backgroundColor: 'var(--color-bg-main, #F7F5EF)',
+                  border: '1.5px solid var(--color-divider-gray, #D8D4C7)',
+                  borderRadius: 14,
+                  padding: '16px 18px',
+                }}
+              >
+                <div style={{ fontSize: 12, color: 'var(--color-graphite, #53635B)', fontWeight: 600, textTransform: 'uppercase' }}>
+                  Per-Person Estimated Budget
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--color-graphite)', marginTop: 2 }}>Flights, Cabs & Transit</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-terracotta, #D97745)', marginTop: 4 }}>
+                  {tripBudgetSummary.hasAnyCost
+                    ? `${getCurrencySymbol(tripBudgetSummary.currency)} ${tripBudgetSummary.perPersonCost.toLocaleString()}`
+                    : 'Not estimated'}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-graphite, #53635B)', marginTop: 2 }}>
+                  For {tripBudgetSummary.travellersCount} {tripBudgetSummary.travellersCount === 1 ? 'traveller' : 'travellers in party'}
+                </div>
               </div>
 
-              <div style={{ backgroundColor: '#fff', border: '1px solid var(--color-divider-gray)', borderRadius: 12, padding: 14 }}>
-                <div style={{ fontSize: 12, color: 'var(--color-graphite)', fontWeight: 600 }}>Accommodation</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-hopper-blue)', marginTop: 4 }}>
-                  {budgetAnalysis.currency} {Math.round(budgetAnalysis.categories.accommodation).toLocaleString()}
+              {/* Target Budget & Remaining */}
+              {tripBudgetSummary.userBudget !== null && (
+                <div
+                  style={{
+                    backgroundColor: 'var(--color-bg-main, #F7F5EF)',
+                    border: '1.5px solid var(--color-divider-gray, #D8D4C7)',
+                    borderRadius: 14,
+                    padding: '16px 18px',
+                  }}
+                >
+                  <div style={{ fontSize: 12, color: 'var(--color-graphite, #53635B)', fontWeight: 600, textTransform: 'uppercase' }}>
+                    Supplied Trip Budget
+                  </div>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-text-primary, #26332E)', marginTop: 4 }}>
+                    {getCurrencySymbol(tripBudgetSummary.currency)} {tripBudgetSummary.userBudget.toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--color-graphite, #53635B)', marginTop: 2 }}>
+                    {tripBudgetSummary.budgetRemaining !== null && tripBudgetSummary.budgetRemaining >= 0
+                      ? `${getCurrencySymbol(tripBudgetSummary.currency)} ${Math.round(tripBudgetSummary.budgetRemaining).toLocaleString()} remaining`
+                      : 'Target exceeded'}
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--color-graphite)', marginTop: 2 }}>Hotel & Resort stays</div>
-              </div>
+              )}
+            </div>
 
-              <div style={{ backgroundColor: '#fff', border: '1px solid var(--color-divider-gray)', borderRadius: 12, padding: 14 }}>
-                <div style={{ fontSize: 12, color: 'var(--color-graphite)', fontWeight: 600 }}>Food & Dining</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-hopper-blue)', marginTop: 4 }}>
-                  {budgetAnalysis.currency} {Math.round(budgetAnalysis.categories.food).toLocaleString()}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--color-graphite)', marginTop: 2 }}>Meals & local tasting</div>
+            {/* 7 Separate Expense Categories */}
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-primary, #26332E)', marginBottom: 10 }}>
+                Category-Wise Expense Breakdown
               </div>
-
-              <div style={{ backgroundColor: '#fff', border: '1px solid var(--color-divider-gray)', borderRadius: 12, padding: 14 }}>
-                <div style={{ fontSize: 12, color: 'var(--color-graphite)', fontWeight: 600 }}>Activities & Entry</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-hopper-blue)', marginTop: 4 }}>
-                  {budgetAnalysis.currency} {Math.round(budgetAnalysis.categories.activities).toLocaleString()}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                  gap: 12,
+                }}
+              >
+                {/* 1. Flights */}
+                <div style={{ backgroundColor: '#ffffff', border: '1px solid var(--color-divider-gray, #E8E4D9)', borderRadius: 12, padding: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-graphite, #53635B)', fontWeight: 600 }}>
+                    <Plane size={15} color="var(--color-primary, #183D32)" />
+                    <span>Flights</span>
+                  </div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--color-primary, #183D32)', marginTop: 4 }}>
+                    {tripBudgetSummary.hasItems.flights
+                      ? `${getCurrencySymbol(tripBudgetSummary.currency)} ${tripBudgetSummary.categories.flights.toLocaleString()}`
+                      : 'Not estimated'}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--color-graphite, #53635B)', marginTop: 2 }}>Airfare</div>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--color-graphite)', marginTop: 2 }}>Monuments & Tickets</div>
+
+                {/* 2. Train / Bus */}
+                <div style={{ backgroundColor: '#ffffff', border: '1px solid var(--color-divider-gray, #E8E4D9)', borderRadius: 12, padding: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-graphite, #53635B)', fontWeight: 600 }}>
+                    <Train size={15} color="var(--color-primary, #183D32)" />
+                    <span>Train / Bus</span>
+                  </div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--color-primary, #183D32)', marginTop: 4 }}>
+                    {tripBudgetSummary.hasItems.trainBus
+                      ? `${getCurrencySymbol(tripBudgetSummary.currency)} ${tripBudgetSummary.categories.trainBus.toLocaleString()}`
+                      : 'Not estimated'}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--color-graphite, #53635B)', marginTop: 2 }}>Intercity transit</div>
+                </div>
+
+                {/* 3. Accommodation */}
+                <div style={{ backgroundColor: '#ffffff', border: '1px solid var(--color-divider-gray, #E8E4D9)', borderRadius: 12, padding: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-graphite, #53635B)', fontWeight: 600 }}>
+                    <Hotel size={15} color="var(--color-primary, #183D32)" />
+                    <span>Accommodation</span>
+                  </div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--color-primary, #183D32)', marginTop: 4 }}>
+                    {tripBudgetSummary.hasItems.accommodation
+                      ? `${getCurrencySymbol(tripBudgetSummary.currency)} ${tripBudgetSummary.categories.accommodation.toLocaleString()}`
+                      : 'Not estimated'}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--color-graphite, #53635B)', marginTop: 2 }}>Hotel & resorts</div>
+                </div>
+
+                {/* 4. Food */}
+                <div style={{ backgroundColor: '#ffffff', border: '1px solid var(--color-divider-gray, #E8E4D9)', borderRadius: 12, padding: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-graphite, #53635B)', fontWeight: 600 }}>
+                    <Utensils size={15} color="var(--color-primary, #183D32)" />
+                    <span>Food & Dining</span>
+                  </div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--color-primary, #183D32)', marginTop: 4 }}>
+                    {tripBudgetSummary.hasItems.food
+                      ? `${getCurrencySymbol(tripBudgetSummary.currency)} ${tripBudgetSummary.categories.food.toLocaleString()}`
+                      : 'Not estimated'}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--color-graphite, #53635B)', marginTop: 2 }}>Meals & tastings</div>
+                </div>
+
+                {/* 5. Local Transportation */}
+                <div style={{ backgroundColor: '#ffffff', border: '1px solid var(--color-divider-gray, #E8E4D9)', borderRadius: 12, padding: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-graphite, #53635B)', fontWeight: 600 }}>
+                    <Car size={15} color="var(--color-primary, #183D32)" />
+                    <span>Local Transport</span>
+                  </div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--color-primary, #183D32)', marginTop: 4 }}>
+                    {tripBudgetSummary.hasItems.localTransport
+                      ? `${getCurrencySymbol(tripBudgetSummary.currency)} ${tripBudgetSummary.categories.localTransport.toLocaleString()}`
+                      : 'Not estimated'}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--color-graphite, #53635B)', marginTop: 2 }}>Taxis, cabs & auto</div>
+                </div>
+
+                {/* 6. Activities & Attractions */}
+                <div style={{ backgroundColor: '#ffffff', border: '1px solid var(--color-divider-gray, #E8E4D9)', borderRadius: 12, padding: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-graphite, #53635B)', fontWeight: 600 }}>
+                    <Sparkles size={15} color="var(--color-primary, #183D32)" />
+                    <span>Activities</span>
+                  </div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--color-primary, #183D32)', marginTop: 4 }}>
+                    {tripBudgetSummary.hasItems.activities
+                      ? `${getCurrencySymbol(tripBudgetSummary.currency)} ${tripBudgetSummary.categories.activities.toLocaleString()}`
+                      : 'Not estimated'}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--color-graphite, #53635B)', marginTop: 2 }}>Entry & sightseeing</div>
+                </div>
+
+                {/* 7. Miscellaneous */}
+                <div style={{ backgroundColor: '#ffffff', border: '1px solid var(--color-divider-gray, #E8E4D9)', borderRadius: 12, padding: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-graphite, #53635B)', fontWeight: 600 }}>
+                    <Tag size={15} color="var(--color-primary, #183D32)" />
+                    <span>Miscellaneous</span>
+                  </div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--color-primary, #183D32)', marginTop: 4 }}>
+                    {tripBudgetSummary.hasItems.miscellaneous
+                      ? `${getCurrencySymbol(tripBudgetSummary.currency)} ${tripBudgetSummary.categories.miscellaneous.toLocaleString()}`
+                      : 'Not estimated'}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--color-graphite, #53635B)', marginTop: 2 }}>Buffer allowance</div>
+                </div>
               </div>
             </div>
 
@@ -783,24 +1302,25 @@ export const ItineraryViewPage: React.FC = () => {
             overflowX: 'auto',
             paddingBottom: 8,
             marginBottom: 24,
-            borderBottom: '1px solid var(--color-divider-gray)',
+            borderBottom: '1px solid var(--color-divider-gray, #D8D4C7)',
           }}
         >
-          {itinerary.days?.map((d) => {
-            const isSelected = selectedDayNumber === d.day_number;
+          {itinerary.days?.map((d: any) => {
+            const dayNum = d.day_number ?? d.dayNumber;
+            const isSelected = selectedDayNumber === dayNum;
             return (
               <button
-                key={d.day_number}
+                key={dayNum}
                 type="button"
-                onClick={() => setSelectedDayNumber(d.day_number)}
+                onClick={() => setSelectedDayNumber(dayNum)}
                 style={{
                   padding: '10px 18px',
-                  borderRadius: 'var(--radius-pills)',
+                  borderRadius: 'var(--radius-pills, 9999px)',
                   border: isSelected
-                    ? '1.5px solid var(--color-hopper-blue)'
-                    : '1px solid var(--color-divider-gray)',
-                  backgroundColor: isSelected ? 'var(--color-hopper-blue)' : 'var(--color-white)',
-                  color: isSelected ? '#fff' : 'var(--color-ink)',
+                    ? '1.5px solid var(--color-primary, #183D32)'
+                    : '1px solid var(--color-divider-gray, #D8D4C7)',
+                  backgroundColor: isSelected ? 'var(--color-primary, #183D32)' : '#ffffff',
+                  color: isSelected ? '#fff' : 'var(--color-text-primary, #26332E)',
                   fontWeight: 700,
                   fontSize: 14,
                   cursor: 'pointer',
@@ -811,7 +1331,7 @@ export const ItineraryViewPage: React.FC = () => {
                   transition: 'all 0.15s ease',
                 }}
               >
-                <span>Day {d.day_number}</span>
+                <span>Day {dayNum}</span>
                 <span
                   style={{
                     fontSize: 12,
@@ -819,7 +1339,7 @@ export const ItineraryViewPage: React.FC = () => {
                     fontWeight: 400,
                   }}
                 >
-                  {d.date.slice(5)}
+                  {d.date ? d.date.slice(5) : ''}
                 </span>
               </button>
             );
@@ -838,23 +1358,23 @@ export const ItineraryViewPage: React.FC = () => {
           }}
         >
           <div>
-            <h2 className="heading-card" style={{ color: 'var(--color-ink)' }}>
-              Day {selectedDay.day_number}: {selectedDay.theme || 'Exploration & Sightseeing'}
+            <h2 className="heading-card" style={{ color: 'var(--color-primary, #183D32)', margin: '0 0 4px 0' }}>
+              Day {selectedDay.day_number ?? (selectedDay as any).dayNumber}: {selectedDay.theme || 'Exploration & Sightseeing'}
             </h2>
-            <p style={{ fontSize: 13, color: 'var(--color-graphite)', marginTop: 2 }}>
+            <p style={{ fontSize: 13, color: 'var(--color-graphite, #53635B)', margin: 0 }}>
               Date: {selectedDay.date} • {selectedDay.activities?.length || 0} Scheduled Activities
             </p>
           </div>
 
           <button
             type="button"
-            onClick={() => setRegenerateDayModal(selectedDay.day_number)}
+            onClick={() => setRegenerateDayModal(selectedDay.day_number ?? (selectedDay as any).dayNumber)}
             className="btn-secondary"
             style={{ padding: '8px 16px', fontSize: 13 }}
             title="Surgically replan this day with custom AI prompt"
           >
-            <RefreshCw size={14} color="var(--color-hopper-blue)" />
-            <span>Regenerate Day {selectedDay.day_number} Plan</span>
+            <RefreshCw size={14} color="var(--color-primary, #183D32)" />
+            <span>Regenerate Day {selectedDay.day_number ?? (selectedDay as any).dayNumber} Plan</span>
           </button>
         </div>
 
@@ -881,7 +1401,7 @@ export const ItineraryViewPage: React.FC = () => {
                   OSRM Route Navigation Calculated:
                 </span>{' '}
                 <span style={{ fontSize: 13, color: 'var(--color-ink)' }}>
-                  {dayDirections.distance_km} km total driving distance • ~{Math.round(dayDirections.duration_minutes)} mins transit across Day {selectedDay.day_number} destinations
+                  {dayDirections.distance_km} km total driving distance • ~{Math.round(dayDirections.duration_minutes)} mins transit across Day {selectedDay.day_number ?? (selectedDay as any).dayNumber} destinations
                 </span>
               </div>
             </div>
@@ -894,88 +1414,165 @@ export const ItineraryViewPage: React.FC = () => {
         {/* Activities Timeline */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {selectedDay.activities && selectedDay.activities.length > 0 ? (
-            selectedDay.activities.map((act, index) => (
-              <div
-                key={act.id || index}
-                style={{
-                  backgroundColor: 'var(--surface-white-canvas)',
-                  border: '1px solid var(--color-divider-gray)',
-                  borderRadius: 'var(--radius-cards)',
-                  padding: 20,
-                  display: 'grid',
-                  gridTemplateColumns: '120px 1fr auto',
-                  gap: 20,
-                  alignItems: 'start',
-                  transition: 'border-color 0.15s ease',
-                }}
-              >
-                {/* Time & Duration Column */}
-                <div style={{ borderRight: '1px solid var(--color-cloud)', paddingRight: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 800, fontSize: 15, color: 'var(--color-ink)' }}>
-                    <Clock size={16} color="var(--color-hopper-blue)" />
-                    <span>{act.start_time || '09:00'}</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--color-graphite)', marginTop: 4 }}>
-                    {act.duration_minutes} minutes
-                  </div>
-                  <span className="badge badge-cloud" style={{ marginTop: 8, textTransform: 'capitalize' }}>
-                    {act.category}
-                  </span>
-                </div>
+            selectedDay.activities.map((act: any, index: number) => {
+              const costInfo = getActivityCost(act);
+              const transInfo = getTransportDetails(act, trip?.starting_city || undefined, trip?.destination || undefined);
+              const currencySym = getCurrencySymbol(act.cost_currency || act.costCurrency || itinerary.budget?.currency);
+              const startTime = act.startTime || act.start_time || '09:00';
+              const durationMinutes = act.durationMinutes ?? act.duration_minutes ?? 60;
 
-                {/* Main Content Column */}
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-ink)' }}>
-                      {act.name}
-                    </h3>
-                    {act.source_status === 'verified' ? (
-                      <span className="badge badge-verified" title="Verified against live OpenStreetMap database">
-                        <Check size={12} />
-                        <span>Verified POI</span>
-                      </span>
-                    ) : (
-                      <span className="badge badge-unverified" title="AI Estimated activity">
-                        <span>AI Estimate</span>
-                      </span>
+              return (
+                <div
+                  key={act.id || index}
+                  style={{
+                    backgroundColor: 'var(--surface-white-canvas, #ffffff)',
+                    border: '1px solid var(--color-divider-gray, #D8D4C7)',
+                    borderRadius: 'var(--radius-cards, 16px)',
+                    padding: 20,
+                    display: 'grid',
+                    gridTemplateColumns: '120px 1fr auto',
+                    gap: 20,
+                    alignItems: 'start',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                    transition: 'border-color 0.15s ease',
+                  }}
+                >
+                  {/* Time & Duration Column */}
+                  <div style={{ borderRight: '1px solid var(--color-cloud, #E8E4D9)', paddingRight: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 800, fontSize: 15, color: 'var(--color-text-primary, #26332E)' }}>
+                      <Clock size={16} color="var(--color-primary, #183D32)" />
+                      <span>{startTime}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--color-graphite, #53635B)', marginTop: 4 }}>
+                      {durationMinutes} minutes
+                    </div>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        marginTop: 8,
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        backgroundColor: 'var(--color-bg-main, #F7F5EF)',
+                        color: 'var(--color-primary, #183D32)',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      {act.category}
+                    </span>
+                  </div>
+
+                  {/* Main Content Column */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary, #26332E)', margin: 0 }}>
+                        {act.name}
+                      </h3>
+                      {(act.source_status === 'verified' || act.sourceStatus === 'verified') ? (
+                        <span className="badge badge-verified" title="Verified against live OpenStreetMap database">
+                          <Check size={12} />
+                          <span>Verified POI</span>
+                        </span>
+                      ) : (
+                        <span className="badge badge-unverified" title="AI Estimated activity">
+                          <span>AI Estimate</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <p style={{ fontSize: 14, color: 'var(--color-graphite, #53635B)', lineHeight: 1.5, margin: '0 0 10px 0' }}>
+                      {act.description}
+                    </p>
+
+                    {/* Rich Transportation Card (Requirement 5) */}
+                    {transInfo && (
+                      <div
+                        style={{
+                          marginTop: 10,
+                          marginBottom: 10,
+                          padding: '12px 14px',
+                          borderRadius: 12,
+                          backgroundColor: 'var(--color-bg-main, #F7F5EF)',
+                          border: '1.5px solid var(--color-divider-gray, #D8D4C7)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, color: 'var(--color-primary, #183D32)', fontSize: 14 }}>
+                            {transInfo.mode === 'flight' ? <Plane size={18} color="var(--color-terracotta, #D97745)" /> :
+                             transInfo.mode === 'train' ? <Train size={18} color="var(--color-terracotta, #D97745)" /> :
+                             transInfo.mode === 'bus' ? <Bus size={18} color="var(--color-terracotta, #D97745)" /> :
+                             <Car size={18} color="var(--color-terracotta, #D97745)" />}
+                            <span style={{ textTransform: 'capitalize' }}>
+                              {transInfo.mode}: {transInfo.startPoint && transInfo.endPoint ? `${transInfo.startPoint} → ${transInfo.endPoint}` : act.name}
+                            </span>
+                          </div>
+
+                          {transInfo.fare !== null && (
+                            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-primary, #183D32)' }}>
+                              Estimated fare: {currencySym} {transInfo.fare.toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12, color: 'var(--color-graphite, #53635B)' }}>
+                          {transInfo.durationMinutes && (
+                            <div>
+                              <strong>Estimated duration:</strong> {formatJourneyDuration(transInfo.durationMinutes)}
+                            </div>
+                          )}
+                          {transInfo.startPoint && transInfo.endPoint && (
+                            <div>
+                              <strong>Route:</strong> {transInfo.startPoint} to {transInfo.endPoint}
+                            </div>
+                          )}
+                          {transInfo.distanceKm && (
+                            <div>
+                              <strong>Distance:</strong> {transInfo.distanceKm} km
+                            </div>
+                          )}
+                          {transInfo.details && (
+                            <div>
+                              <strong>Details:</strong> {transInfo.details}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     )}
-                  </div>
 
-                  <p style={{ fontSize: 14, color: 'var(--color-graphite)', lineHeight: 1.5, marginBottom: 12 }}>
-                    {act.description}
-                  </p>
-
-                  {/* Location & Transport if present */}
-                  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12, color: 'var(--color-graphite)' }}>
+                    {/* Location address if present */}
                     {act.location?.address && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <MapPin size={13} color="var(--color-graphite)" />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-graphite, #53635B)', marginTop: 4 }}>
+                        <MapPin size={13} color="var(--color-graphite, #53635B)" />
                         <span>{act.location.address}</span>
                       </div>
                     )}
-                    {act.transport?.mode && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Car size={13} color="var(--color-hopper-blue)" />
-                        <span>
-                          Transit: {act.transport.mode} ({act.transport.duration_minutes || 15} mins)
-                          {act.transport.estimated_cost ? ` • ₹${act.transport.estimated_cost}` : ''}
-                        </span>
-                      </div>
-                    )}
                   </div>
-                </div>
 
-                {/* Cost Estimate Pill */}
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 11, color: 'var(--color-graphite)', textTransform: 'uppercase' }}>
-                    Est. Cost
-                  </div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-hopper-blue)', marginTop: 2 }}>
-                    {act.cost_currency || 'INR'} {act.estimated_cost?.toLocaleString() || '0'}
+                  {/* Activity Estimated Cost Pill (Requirement 1) */}
+                  <div style={{ textAlign: 'right', minWidth: 120 }}>
+                    <div style={{ fontSize: 11, color: 'var(--color-graphite, #53635B)', textTransform: 'uppercase', fontWeight: 600 }}>
+                      Est. Cost
+                    </div>
+                    <div style={{ marginTop: 2 }}>
+                      {costInfo.isMissing ? (
+                        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-graphite, #53635B)', fontStyle: 'italic' }}>
+                          Not estimated
+                        </span>
+                      ) : costInfo.isFree ? (
+                        <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-primary, #183D32)' }}>
+                          {currencySym} 0 (Free)
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-primary, #183D32)' }}>
+                          {currencySym} {costInfo.cost!.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="state-empty">
               <Calendar size={32} color="var(--color-placeholder-gray)" style={{ margin: '0 auto 8px auto' }} />
