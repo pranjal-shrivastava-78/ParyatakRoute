@@ -224,7 +224,17 @@ class ItineraryService:
         if not target_day or target_index == -1:
             raise NotFoundException(f"Day {day_number} not found in this itinerary", code="INVALID_DAY_NUMBER")
 
-        destination = parent_trip.destination if parent_trip else "Destination"
+        if parent_trip and parent_trip.destination:
+            destination = parent_trip.destination
+        else:
+            destination = (
+                itin.title.replace("Trip to ", "")
+                .replace(" Itinerary", "")
+                .replace("3-Day ", "")
+                .replace("2-Day ", "")
+                .strip()
+                or "India"
+            )
         travel_style = parent_trip.travel_style if parent_trip else "balanced"
         currency = itin.budget.currency
         daily_target = (parent_trip.budget / max(len(itin.days), 1)) if parent_trip else 5000.0

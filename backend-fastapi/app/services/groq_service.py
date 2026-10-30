@@ -66,6 +66,11 @@ class GroqService:
                 await asyncio.sleep(delay)
             except APIError as e:
                 logger.error(f"[Groq AI] API error: status={e.status_code}, message={e.message}")
+                if attempt < self.max_retries - 1 and (e.status_code in (500, 502, 503) or "json_validate_failed" in str(e)):
+                    delay = base_delay * (2 ** attempt) + random.uniform(0.1, 0.4)
+                    logger.warning(f"[Groq AI] Retrying transient error ({e.message}) on attempt {attempt + 1} in {delay:.2f}s...")
+                    await asyncio.sleep(delay)
+                    continue
                 if e.status_code == 429:
                     raise AppException(
                         message="AI quota exhausted or rate limit reached on Groq Cloud. Please try again later.",
