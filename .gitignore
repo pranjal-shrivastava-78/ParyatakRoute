@@ -1,0 +1,66 @@
+# Environment and local secret files
+.env
+.env.*
+!.env.example
+*.local
+
+# Python byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python virtual environments
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+*.lcov
+.nyc_output/
+
+# Dependencies and package managers
+node_modules/
+/.pnp
+.pnp.js
+
+# Production build outputs
+dist/
+build/
+out/
+.next/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Temporary files and caches
+.cache/
+.temp/
+.tmp/
+*.tmp
+*.swp
+
+# Operating System files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# IDE and Editor files
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.sublime-project
+*.sublime-workspace
