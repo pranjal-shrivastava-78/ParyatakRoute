@@ -15,9 +15,9 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = Field(default="INFO", description="DEBUG | INFO | WARNING | ERROR")
 
     # Frontend & CORS
-    FRONTEND_URL: str = Field(default="http://localhost:5173")
+    FRONTEND_URL: str = Field(default="http://localhost:5174")
     CORS_ALLOWED_ORIGINS: str = Field(
-        default="http://localhost:5173,http://localhost:3000,https://paryatakroute.vercel.app"
+        default="http://localhost:5174,http://localhost:5173,http://localhost:5175,http://localhost:3000,http://127.0.0.1:5174,http://127.0.0.1:5173,https://paryatakroute.vercel.app"
     )
 
     # Supabase Credentials
