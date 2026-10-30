@@ -90,3 +90,8 @@ class UserProfileResponse(BaseModel):
     status: str = "active"
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+
+class UserProfileUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=2, max_length=100)
+    avatar_url: Optional[str] = Field(default=None)

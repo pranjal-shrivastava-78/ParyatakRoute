@@ -1,0 +1,472 @@
+/* ==========================================================================
+   ParyatakRoute — Design System
+   Source: DESIGN.md (Hopper-inspired architectural travel interface)
+   ========================================================================== */
+
+:root {
+  /* Colors */
+  --color-hopper-blue: #1878ec;
+  --color-hopper-blue-hover: #1263c7;
+  --color-hopper-blue-subtle: #ebf3fd;
+  --color-white: #ffffff;
+  --color-cloud: #f6f6f6;
+  --color-mist: #ededed;
+  --color-divider-gray: #d9d9d9;
+  --color-ink: #111111;
+  --color-graphite: #606060;
+  --color-placeholder-gray: #b3b3b3;
+
+  /* Semantic Feedback */
+  --color-success: #0d9f67;
+  --color-success-bg: #eafaf1;
+  --color-warning: #d97706;
+  --color-warning-bg: #fef3c7;
+  --color-danger: #dc2626;
+  --color-danger-bg: #fee2e2;
+
+  /* Typography — Font Families */
+  --font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-proxima-nova: 'Nunito Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Typography — Scale */
+  --text-destination-link: 14px;
+  --leading-destination-link: 1.43;
+  --text-body: 16px;
+  --leading-body: 1.5;
+  --text-nav: 16px;
+  --leading-nav: 1.5;
+  --text-section-heading: 20px;
+  --leading-section-heading: 1.4;
+  --text-card-heading: 24px;
+  --leading-card-heading: 1.33;
+  --text-app-heading: 32px;
+  --leading-app-heading: 1.25;
+
+  /* Typography — Weights */
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* Spacing Scale (4px base) */
+  --spacing-4: 4px;
+  --spacing-8: 8px;
+  --spacing-12: 12px;
+  --spacing-16: 16px;
+  --spacing-20: 20px;
+  --spacing-24: 24px;
+  --spacing-28: 28px;
+  --spacing-32: 32px;
+  --spacing-40: 40px;
+  --spacing-48: 48px;
+  --spacing-56: 56px;
+
+  /* Layout */
+  --section-gap: 48px;
+  --card-padding: 12px;
+  --element-gap: 8px;
+
+  /* Border Radii per DESIGN.md */
+  --radius-cards: 16px;
+  --radius-links: 4px;
+  --radius-pills: 9999px;
+  --radius-images: 32px;
+  --radius-inputs: 0px;
+  --radius-buttons: 1000px;
+  --radius-compactcontrols: 12px;
+
+  /* Surfaces */
+  --surface-white-canvas: #ffffff;
+  --surface-cloud-surface: #f6f6f6;
+  --surface-mist-band: #ededed;
+  --surface-hopper-blue-surface: #1878ec;
+}
+
+/* ==========================================================================
+   Base Resets
+   ========================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-family);
+  font-size: 16px;
+  line-height: var(--leading-body);
+  color: var(--color-ink);
+  background-color: var(--surface-white-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: var(--color-hopper-blue);
+  text-decoration: none;
+  border-radius: var(--radius-links);
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* ==========================================================================
+   Typography Utilities
+   ========================================================================== */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-ink);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.3;
+}
+
+.heading-app {
+  font-size: var(--text-app-heading);
+  line-height: var(--leading-app-heading);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: -0.02em;
+}
+
+.heading-card {
+  font-size: var(--text-card-heading);
+  line-height: var(--leading-card-heading);
+  font-weight: var(--font-weight-bold);
+}
+
+.heading-section {
+  font-size: var(--text-section-heading);
+  line-height: var(--leading-section-heading);
+  font-weight: var(--font-weight-bold);
+}
+
+.text-body {
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--color-graphite);
+}
+
+.text-graphite {
+  color: var(--color-graphite);
+}
+
+.text-link-blue {
+  font-size: var(--text-destination-link);
+  line-height: var(--leading-destination-link);
+  color: var(--color-hopper-blue);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ==========================================================================
+   Layout Containers
+   ========================================================================== */
+.container {
+  width: 100%;
+  max-width: 1240px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--spacing-20);
+  padding-right: var(--spacing-20);
+}
+
+.main-content {
+  flex: 1 0 auto;
+}
+
+/* Section bands per DESIGN.md */
+.section-white {
+  background-color: var(--surface-white-canvas);
+  padding-top: var(--spacing-48);
+  padding-bottom: var(--spacing-48);
+}
+
+.section-cloud {
+  background-color: var(--surface-cloud-surface);
+  padding-top: var(--spacing-48);
+  padding-bottom: var(--spacing-48);
+}
+
+.section-mist {
+  background-color: var(--surface-mist-band);
+  padding-top: var(--spacing-48);
+  padding-bottom: var(--spacing-48);
+}
+
+/* ==========================================================================
+   Buttons & Controls (Hopper Style)
+   ========================================================================== */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-8);
+  background-color: var(--color-hopper-blue);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-buttons);
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-hopper-blue-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-8);
+  background-color: transparent;
+  color: var(--color-ink);
+  border: 1px solid var(--color-divider-gray);
+  border-radius: var(--radius-buttons);
+  padding: 9px 22px;
+  font-size: 15px;
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  background-color: var(--color-white);
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--color-ink);
+  background-color: var(--color-cloud);
+}
+
+.btn-hero-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-8);
+  background-color: transparent;
+  color: var(--color-white);
+  border: 1px solid var(--color-white);
+  border-radius: var(--radius-compactcontrols);
+  padding: 8px 24px;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.btn-hero-outline:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-circle-utility {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--color-white);
+  background-color: transparent;
+  color: var(--color-white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-circle-utility:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================================================
+   Badges & Tags
+   ========================================================================== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pills);
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.2;
+}
+
+.badge-verified {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid rgba(13, 159, 103, 0.2);
+}
+
+.badge-unverified {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.badge-blue {
+  background-color: var(--color-hopper-blue-subtle);
+  color: var(--color-hopper-blue);
+  border: 1px solid rgba(24, 120, 236, 0.2);
+}
+
+.badge-cloud {
+  background-color: var(--color-cloud);
+  color: var(--color-graphite);
+  border: 1px solid var(--color-divider-gray);
+}
+
+/* ==========================================================================
+   Cards per DESIGN.md
+   "Use a #f6f6f6 surface, 16px radius, no box shadow... 1px #d9d9d9 border only where cards need separation"
+   ========================================================================== */
+.card-destination {
+  background-color: var(--surface-cloud-surface);
+  border-radius: var(--radius-cards);
+  border: 1px solid var(--color-divider-gray);
+  overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.card-destination:hover {
+  transform: translateY(-2px);
+  border-color: #b0b0b0;
+}
+
+.card-destination img {
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+}
+
+.card-content {
+  padding: var(--spacing-16);
+}
+
+/* ==========================================================================
+   Forms & Inputs
+   ========================================================================== */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-8);
+  margin-bottom: var(--spacing-20);
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-ink);
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-divider-gray);
+  border-radius: var(--radius-compactcontrols);
+  font-size: 15px;
+  color: var(--color-ink);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--color-hopper-blue);
+  box-shadow: 0 0 0 3px rgba(24, 120, 236, 0.15);
+}
+
+.form-input::placeholder, .form-textarea::placeholder {
+  color: var(--color-placeholder-gray);
+}
+
+.form-error-text {
+  font-size: 13px;
+  color: var(--color-danger);
+}
+
+/* ==========================================================================
+   Modals & Overlays
+   ========================================================================== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(17, 17, 17, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-16);
+}
+
+.modal-surface {
+  background-color: var(--surface-white-canvas);
+  border-radius: var(--radius-cards);
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--color-divider-gray);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+/* ==========================================================================
+   States (Loading & Empty)
+   ========================================================================== */
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(24, 120, 236, 0.2);
+  border-top-color: var(--color-hopper-blue);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.state-empty {
+  text-align: center;
+  padding: var(--spacing-48) var(--spacing-20);
+  background-color: var(--color-cloud);
+  border-radius: var(--radius-cards);
+  border: 1px dashed var(--color-divider-gray);
+}

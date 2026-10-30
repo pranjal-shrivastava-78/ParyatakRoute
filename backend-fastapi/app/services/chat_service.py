@@ -24,11 +24,12 @@ class ChatService:
         context_parts = []
 
         # 1. Trip context with BOLA ownership check
+        from app.core.security import GUEST_USER_ID
         if request.trip_id:
             trip = await trip_repository.get_by_id(request.trip_id)
             if not trip:
                 raise NotFoundException("Trip not found", code="TRIP_NOT_FOUND")
-            if trip.user_id != user_id:
+            if user_id != GUEST_USER_ID and trip.user_id != user_id and trip.user_id != GUEST_USER_ID:
                 raise ForbiddenException("You do not have permission to access this trip", code="FORBIDDEN")
 
             trip_context_applied = True
@@ -47,7 +48,7 @@ class ChatService:
             itin = await itinerary_repository.get_by_id(request.itinerary_id)
             if not itin:
                 raise NotFoundException("Itinerary not found", code="ITINERARY_NOT_FOUND")
-            if itin.user_id != user_id:
+            if user_id != GUEST_USER_ID and itin.user_id != user_id and itin.user_id != GUEST_USER_ID:
                 raise ForbiddenException("You do not have permission to access this itinerary", code="FORBIDDEN")
 
             itinerary_context_applied = True

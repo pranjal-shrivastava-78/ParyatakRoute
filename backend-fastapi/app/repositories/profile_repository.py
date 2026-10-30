@@ -59,5 +59,35 @@ class ProfileRepository:
         _memory_profiles[user_id] = record
         return UserProfileResponse(**record)
 
+    async def update(self, user_id: str, updates: Dict[str, Any]) -> UserProfileResponse:
+        self._check_production_readiness()
+        now = datetime.now(timezone.utc).isoformat()
+        updates["updated_at"] = now
+
+        if self.client:
+            try:
+                res = self.client.table("profiles").update(updates).eq("id", user_id).execute()
+                if res.data and len(res.data) > 0:
+                    return UserProfileResponse(**res.data[0])
+            except Exception as e:
+                logger.warning(f"[ProfileRepo] Supabase update profile error: {e}")
+
+        if user_id in _memory_profiles:
+            _memory_profiles[user_id].update(updates)
+            return UserProfileResponse(**_memory_profiles[user_id])
+
+        record = {
+            "id": user_id,
+            "email": f"user_{user_id[:8]}@example.com",
+            "name": updates.get("name", "Traveler"),
+            "role": "user",
+            "status": "active",
+            "created_at": now,
+            "updated_at": now,
+            **updates,
+        }
+        _memory_profiles[user_id] = record
+        return UserProfileResponse(**record)
+
 
 profile_repository = ProfileRepository()

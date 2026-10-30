@@ -27,6 +27,7 @@ from app.schemas.auth import (
     AuthResponseData,
     SafeUser,
     AuthTokens,
+    UserProfileUpdate,
 )
 from app.schemas.common import APIResponse
 
@@ -389,3 +390,26 @@ async def get_current_user_profile(
         "created_at": created_at,
     }
     return APIResponse(success=True, data=payload)
+
+
+@router.patch("/me", response_model=APIResponse[dict[str, Any]], status_code=status.HTTP_200_OK, summary="Update Current Authenticated Profile")
+async def update_current_user_profile(
+    body: UserProfileUpdate,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+) -> APIResponse[dict[str, Any]]:
+    """Update profile information (display name, avatar) for the authenticated user."""
+    updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    updated = await profile_repo.update(current_user.id, updates)
+    return APIResponse(
+        success=True,
+        message="Profile updated successfully",
+        data={
+            "id": current_user.id,
+            "email": current_user.email,
+            "name": updated.name,
+            "role": current_user.role,
+            "status": "active",
+            "created_at": str(updated.created_at) if updated.created_at else None,
+            "updated_at": str(updated.updated_at) if updated.updated_at else None,
+        },
+    )

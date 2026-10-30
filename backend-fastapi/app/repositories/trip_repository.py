@@ -52,6 +52,11 @@ class TripRepository:
             "updated_at": now.isoformat(),
         }
 
+        from app.core.security import GUEST_USER_ID
+        if user_id == GUEST_USER_ID:
+            _memory_trips[trip_id] = record
+            return TripResponse(**record)
+
         if self.client:
             try:
                 res = self.client.table("trips").insert(record).execute()

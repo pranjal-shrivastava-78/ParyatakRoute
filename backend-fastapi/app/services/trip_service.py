@@ -14,7 +14,8 @@ class TripService:
         trip = await trip_repository.get_by_id(trip_id)
         if not trip:
             raise NotFoundException("Trip not found", code="TRIP_NOT_FOUND")
-        if trip.user_id != user_id:
+        from app.core.security import GUEST_USER_ID
+        if user_id != GUEST_USER_ID and trip.user_id != GUEST_USER_ID and trip.user_id != user_id:
             raise ForbiddenException("You do not have permission to view this trip", code="FORBIDDEN")
         return trip
 

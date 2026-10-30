@@ -5,10 +5,11 @@ and ownership verification with Groq AI quota optimization and request deduplica
 """
 import asyncio
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from typing import List, Dict, Any, Optional
 
 from app.core.exceptions import NotFoundException, ForbiddenException, AppException
+from app.core.security import GUEST_USER_ID
 from app.core.logging import logger
 from app.repositories.itinerary_repository import itinerary_repository
 from app.repositories.trip_repository import trip_repository
@@ -33,20 +34,22 @@ _generation_cache: Dict[str, tuple[ItineraryResponse, float]] = {}
 
 
 class ItineraryService:
-    async def get_itinerary(self, itinerary_id: str, user_id: str) -> ItineraryResponse:
+    async def get_itinerary(self, itinerary_id: str, user_id: Optional[str] = None) -> ItineraryResponse:
         itin = await itinerary_repository.get_by_id(itinerary_id)
         if not itin:
             raise NotFoundException("Itinerary not found", code="ITINERARY_NOT_FOUND")
-        if itin.user_id != user_id:
-            raise ForbiddenException("You do not have permission to view this itinerary", code="FORBIDDEN")
+        if itin.user_id != GUEST_USER_ID:
+            if not user_id or user_id == GUEST_USER_ID or itin.user_id != user_id:
+                raise ForbiddenException("You do not have permission to view this private itinerary", code="FORBIDDEN")
         return itin
 
-    async def get_itinerary_by_trip(self, trip_id: str, user_id: str) -> ItineraryResponse:
+    async def get_itinerary_by_trip(self, trip_id: str, user_id: Optional[str] = None) -> ItineraryResponse:
         trip = await trip_repository.get_by_id(trip_id)
         if not trip:
             raise NotFoundException("Trip not found", code="TRIP_NOT_FOUND")
-        if trip.user_id != user_id:
-            raise ForbiddenException("You do not have permission to view itineraries for this trip", code="FORBIDDEN")
+        if trip.user_id != GUEST_USER_ID:
+            if not user_id or user_id == GUEST_USER_ID or trip.user_id != user_id:
+                raise ForbiddenException("You do not have permission to view itineraries for this trip", code="FORBIDDEN")
         itins = await itinerary_repository.list_by_trip(trip_id)
         if itins:
             return itins[0]
@@ -56,8 +59,9 @@ class ItineraryService:
         trip = await trip_repository.get_by_id(trip_id)
         if not trip:
             raise NotFoundException("Trip not found", code="TRIP_NOT_FOUND")
-        if trip.user_id != user_id:
-            raise ForbiddenException("You do not have permission to view itineraries for this trip", code="FORBIDDEN")
+        if trip.user_id != GUEST_USER_ID:
+            if not user_id or user_id == GUEST_USER_ID or trip.user_id != user_id:
+                raise ForbiddenException("You do not have permission to view itineraries for this trip", code="FORBIDDEN")
         return await itinerary_repository.list_by_trip(trip_id)
 
     async def generate_and_save_itinerary(
@@ -74,12 +78,13 @@ class ItineraryService:
         """
         trip_id = request.trip_id
         trip_data: Optional[Any] = None
+        from app.core.security import GUEST_USER_ID
 
         if trip_id:
             trip_data = await trip_repository.get_by_id(trip_id)
             if not trip_data:
                 raise NotFoundException("Trip not found", code="TRIP_NOT_FOUND")
-            if trip_data.user_id != user_id:
+            if user_id != GUEST_USER_ID and trip_data.user_id != GUEST_USER_ID and trip_data.user_id != user_id:
                 raise ForbiddenException("You do not have permission to generate an itinerary for this trip", code="FORBIDDEN")
 
             # Token saving: If regenerate is False and an itinerary already exists, return it!
@@ -305,7 +310,7 @@ class ItineraryService:
 
     update_itinerary = patch_itinerary
 
-    async def get_budget_analysis(self, itinerary_id: str, user_id: str) -> BudgetBreakdownAnalysis:
+    async def get_budget_analysis(self, itinerary_id: str, user_id: Optional[str] = None) -> BudgetBreakdownAnalysis:
         itin = await self.get_itinerary(itinerary_id, user_id)
         trip = await trip_repository.get_by_id(itin.trip_id)
         trip_budget = float(trip.budget) if trip else 0.0
@@ -360,6 +365,54 @@ class ItineraryService:
             total_estimated=round(total, 2),
             categories=BudgetCategoryBreakdown(**{k: round(v, 2) for k, v in cats.items()}),
         )
+
+    async def claim_guest_itinerary(self, itinerary_id: str, user_id: str) -> ItineraryResponse:
+        """
+        Associates a temporary guest itinerary with the authenticated user account:
+        1. Retrieves the guest itinerary.
+        2. Creates an owned trip in trip_repository for user_id.
+        3. Updates the itinerary record with the new user_id and trip_id.
+        4. Persists the itinerary in the database.
+        """
+        guest_itin = await itinerary_repository.get_by_id(itinerary_id)
+        if not guest_itin:
+            raise NotFoundException("Itinerary not found", code="ITINERARY_NOT_FOUND")
+
+        # Prevent duplicate claiming
+        if guest_itin.user_id == user_id:
+            return guest_itin
+
+        if guest_itin.user_id != GUEST_USER_ID:
+            raise AppException(
+                "This itinerary has already been claimed by another account",
+                status_code=409,
+                code="ALREADY_CLAIMED"
+            )
+
+        start_d = guest_itin.days[0].date if guest_itin.days else "2026-11-01"
+        end_d = guest_itin.days[-1].date if guest_itin.days else "2026-11-03"
+        dest = guest_itin.title.replace(" Itinerary", "").replace("3-Day ", "").replace("2-Day ", "").strip() or "Travel Trip"
+
+        new_trip = TripCreate(
+            destination=dest,
+            start_date=date.fromisoformat(start_d),
+            end_date=date.fromisoformat(end_d),
+            budget=guest_itin.budget.total_estimated if guest_itin.budget else 20000.0,
+            currency=guest_itin.budget.currency if guest_itin.budget else "INR",
+            travellers=2,
+            travel_style="balanced",
+            interests=["heritage", "culture"],
+            status="planned",
+        )
+        created_trip = await trip_repository.create(user_id, new_trip)
+
+        # Update and persist itinerary for the authenticated user
+        itin_dict = guest_itin.model_dump(mode="json")
+        itin_dict["user_id"] = user_id
+        itin_dict["trip_id"] = created_trip.id
+
+        saved_itin = await itinerary_repository.create(itin_dict)
+        return saved_itin
 
 
 itinerary_service = ItineraryService()

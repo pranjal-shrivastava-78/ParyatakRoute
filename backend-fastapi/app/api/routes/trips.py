@@ -3,10 +3,10 @@
 Provides full CRUD operations with strict BOLA (Broken Object Level Authorization)
 checks ensuring users can only read, update, or delete their own trips.
 """
-from typing import Any
+from typing import Any, Optional
 from fastapi import APIRouter, Depends, Query, status
 
-from app.core.security import get_current_user, AuthenticatedUser
+from app.core.security import get_current_user, get_optional_current_user, AuthenticatedUser, GUEST_USER_ID
 from app.schemas.common import APIResponse
 from app.schemas.trip import TripCreate, TripUpdate, TripResponse, TripListResponse
 from app.services.trip_service import TripService
@@ -18,10 +18,11 @@ trip_service = TripService()
 @router.post("", response_model=APIResponse[TripResponse], status_code=status.HTTP_201_CREATED, summary="Create New Trip")
 async def create_trip(
     trip_data: TripCreate,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_current_user),
 ) -> APIResponse[TripResponse]:
-    """Create a new trip for the authenticated user."""
-    created = await trip_service.create_trip(current_user.id, trip_data)
+    """Create a new trip (supports both registered users and guest visitors)."""
+    user_id = current_user.id if current_user else GUEST_USER_ID
+    created = await trip_service.create_trip(user_id, trip_data)
     return APIResponse(success=True, data=created)
 
 
@@ -39,10 +40,11 @@ async def list_trips(
 @router.get("/{trip_id}", response_model=APIResponse[TripResponse], status_code=status.HTTP_200_OK, summary="Get Trip By ID")
 async def get_trip(
     trip_id: str,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_current_user),
 ) -> APIResponse[TripResponse]:
     """Get trip details by ID with ownership check."""
-    trip = await trip_service.get_trip(trip_id, current_user.id)
+    user_id = current_user.id if current_user else GUEST_USER_ID
+    trip = await trip_service.get_trip(trip_id, user_id)
     return APIResponse(success=True, data=trip)
 
 
@@ -50,10 +52,11 @@ async def get_trip(
 async def update_trip(
     trip_id: str,
     updates: TripUpdate,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_current_user),
 ) -> APIResponse[TripResponse]:
     """Update trip details by ID with ownership check."""
-    updated = await trip_service.update_trip(trip_id, current_user.id, updates)
+    user_id = current_user.id if current_user else GUEST_USER_ID
+    updated = await trip_service.update_trip(trip_id, user_id, updates)
     return APIResponse(success=True, data=updated)
 
 

@@ -81,6 +81,7 @@ def get_current_user(
                     signing_key.key,
                     algorithms=[alg],
                     options={"verify_aud": False, "verify_exp": True},
+                    leeway=10,
                 )
             else:
                 # Fallback to Supabase auth client verification
@@ -107,6 +108,7 @@ def get_current_user(
                 settings.SUPABASE_JWT_SECRET,
                 algorithms=["HS256"],
                 options={"verify_aud": False, "verify_exp": True},
+                leeway=10,
             )
         else:
             raise UnauthorizedException(f"Unsupported signing algorithm: '{alg}'", code="INVALID_TOKEN")
@@ -133,3 +135,32 @@ def get_current_user(
         raise
     except Exception as e:
         raise UnauthorizedException(f"Authentication failed: {str(e)}", code="INVALID_TOKEN")
+
+
+GUEST_USER_ID = "60ac5770-df60-402e-9374-79ba6c0c1b72"
+
+
+def get_optional_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(http_bearer),
+    authorization: Optional[str] = Header(None),
+) -> Optional[AuthenticatedUser]:
+    """
+    Returns AuthenticatedUser if valid token is provided, otherwise None.
+    Allows unauthenticated visitors to use AI itinerary generation and chatbot.
+    """
+    token: Optional[str] = None
+    if credentials and credentials.credentials:
+        token = credentials.credentials.strip()
+    elif authorization:
+        parts = authorization.split(" ")
+        if len(parts) == 2 and parts[0].lower() == "bearer":
+            token = parts[1].strip()
+
+    if not token:
+        return None
+
+    try:
+        return get_current_user(credentials=credentials, authorization=authorization)
+    except Exception as e:
+        logger.debug(f"[Security] Optional authentication skipped / failed: {e}")
+        return None

@@ -7,7 +7,7 @@ budget breakdown analytics, and ReportLab PDF export.
 from typing import Any, Optional
 from fastapi import APIRouter, Depends, Path, Response, status
 
-from app.core.security import get_current_user, AuthenticatedUser
+from app.core.security import get_current_user, get_optional_current_user, AuthenticatedUser, GUEST_USER_ID
 from app.schemas.common import APIResponse
 from app.schemas.itinerary import (
     ItineraryResponse,
@@ -23,13 +23,14 @@ router = APIRouter(prefix="/itineraries", tags=["Itineraries"])
 pdf_service = PDFService()
 
 
-@router.post("/generate", response_model=APIResponse[ItineraryResponse], status_code=status.HTTP_201_CREATED, summary="Generate Travel Itinerary with Groq AI")
+@router.post("/generate", response_model=APIResponse[ItineraryResponse], status_code=status.HTTP_201_CREATED, summary="Generate Travel Itinerary with Groq AI (Public & Authenticated)")
 async def generate_itinerary(
     request: GenerateItineraryRequest,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_current_user),
 ) -> APIResponse[ItineraryResponse]:
-    """Generate a structured personalized travel itinerary using Groq AI."""
-    itinerary = await itinerary_service.generate_and_save_itinerary(current_user.id, request)
+    """Generate a structured personalized travel itinerary using Groq AI. Open to all visitors."""
+    user_id = current_user.id if current_user else GUEST_USER_ID
+    itinerary = await itinerary_service.generate_and_save_itinerary(user_id, request)
     return APIResponse(
         success=True,
         message="Itinerary generated and saved successfully",
@@ -40,20 +41,22 @@ async def generate_itinerary(
 @router.get("/trip/{trip_id}", response_model=APIResponse[ItineraryResponse], status_code=status.HTTP_200_OK, summary="Get Itinerary By Trip ID")
 async def get_itinerary_by_trip(
     trip_id: str,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_current_user),
 ) -> APIResponse[ItineraryResponse]:
     """Get the itinerary associated with a trip."""
-    itinerary = await itinerary_service.get_itinerary_by_trip(trip_id, current_user.id)
+    user_id = current_user.id if current_user else None
+    itinerary = await itinerary_service.get_itinerary_by_trip(trip_id, user_id)
     return APIResponse(success=True, data=itinerary)
 
 
-@router.get("/{itinerary_id}", response_model=APIResponse[ItineraryResponse], status_code=status.HTTP_200_OK, summary="Get Itinerary By ID")
+@router.get("/{itinerary_id}", response_model=APIResponse[ItineraryResponse], status_code=status.HTTP_200_OK, summary="Get Itinerary By ID (Public & Authenticated)")
 async def get_itinerary(
     itinerary_id: str,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_current_user),
 ) -> APIResponse[ItineraryResponse]:
-    """Get itinerary details by ID with ownership verification."""
-    itinerary = await itinerary_service.get_itinerary(itinerary_id, current_user.id)
+    """Get itinerary details by ID without requiring authentication."""
+    user_id = current_user.id if current_user else None
+    itinerary = await itinerary_service.get_itinerary(itinerary_id, user_id)
     return APIResponse(success=True, data=itinerary)
 
 
@@ -61,20 +64,22 @@ async def get_itinerary(
 async def patch_itinerary(
     itinerary_id: str,
     patch_data: ItineraryPatchRequest,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_current_user),
 ) -> APIResponse[ItineraryResponse]:
     """Update itinerary days/activities with automatic deterministic budget recalculation."""
-    updated = await itinerary_service.patch_itinerary(itinerary_id, current_user.id, patch_data)
+    user_id = current_user.id if current_user else GUEST_USER_ID
+    updated = await itinerary_service.patch_itinerary(itinerary_id, user_id, patch_data)
     return APIResponse(success=True, data=updated)
 
 
-@router.get("/{itinerary_id}/budget", response_model=APIResponse[BudgetBreakdownAnalysis], status_code=status.HTTP_200_OK, summary="Get Itinerary Budget Analytics")
+@router.get("/{itinerary_id}/budget", response_model=APIResponse[BudgetBreakdownAnalysis], status_code=status.HTTP_200_OK, summary="Get Itinerary Budget Analytics (Public & Authenticated)")
 async def get_itinerary_budget_analysis(
     itinerary_id: str,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_current_user),
 ) -> APIResponse[BudgetBreakdownAnalysis]:
     """Get comprehensive deterministic budget analytics and category breakdown."""
-    analysis = await itinerary_service.get_budget_analysis(itinerary_id, current_user.id)
+    user_id = current_user.id if current_user else None
+    analysis = await itinerary_service.get_budget_analysis(itinerary_id, user_id)
     return APIResponse(success=True, data=analysis)
 
 
@@ -82,20 +87,21 @@ async def get_itinerary_budget_analysis(
     "/{itinerary_id}/days/{day_number}/regenerate",
     response_model=APIResponse[ItineraryResponse],
     status_code=status.HTTP_200_OK,
-    summary="Surgically Regenerate Single Day Plan",
+    summary="Surgically Regenerate Single Day Plan (Public & Authenticated)",
 )
 async def regenerate_day(
     itinerary_id: str = Path(...),
     day_number: int = Path(..., ge=1),
     request: Optional[RegenerateDayRequest] = None,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_current_user),
 ) -> APIResponse[ItineraryResponse]:
     """Surgically regenerate a single day's plan via Groq AI without modifying other days."""
     instruction = request.instruction if request else None
+    user_id = current_user.id if current_user else GUEST_USER_ID
     updated = await itinerary_service.regenerate_day_and_save(
         itinerary_id=itinerary_id,
         day_number=day_number,
-        user_id=current_user.id,
+        user_id=user_id,
         instruction=instruction,
     )
     return APIResponse(
@@ -105,13 +111,14 @@ async def regenerate_day(
     )
 
 
-@router.get("/{itinerary_id}/export/pdf", summary="Export Itinerary as PDF Document")
+@router.get("/{itinerary_id}/export/pdf", summary="Export Itinerary as PDF Document (Public & Authenticated)")
 async def export_itinerary_pdf(
     itinerary_id: str,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: Optional[AuthenticatedUser] = Depends(get_optional_current_user),
 ) -> Response:
     """Generate and download a high quality PDF export of the itinerary."""
-    itinerary = await itinerary_service.get_itinerary(itinerary_id, current_user.id)
+    user_id = current_user.id if current_user else None
+    itinerary = await itinerary_service.get_itinerary(itinerary_id, user_id)
     pdf_bytes = pdf_service.generate_itinerary_pdf(itinerary)
 
     return Response(
@@ -121,4 +128,18 @@ async def export_itinerary_pdf(
             "Content-Disposition": f'attachment; filename="paryatakroute-itinerary-{itinerary_id}.pdf"',
             "Content-Type": "application/pdf",
         },
+    )
+
+
+@router.post("/{itinerary_id}/claim", response_model=APIResponse[ItineraryResponse], status_code=status.HTTP_200_OK, summary="Claim/Save Guest Itinerary into User Account")
+async def claim_guest_itinerary(
+    itinerary_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+) -> APIResponse[ItineraryResponse]:
+    """Associate a guest itinerary with the authenticated user and create an owned trip."""
+    claimed = await itinerary_service.claim_guest_itinerary(itinerary_id, current_user.id)
+    return APIResponse(
+        success=True,
+        message="Itinerary saved to your account successfully",
+        data=claimed,
     )

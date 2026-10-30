@@ -27,8 +27,22 @@ class ItineraryRepository:
         itin_id = itinerary_dict.get("id") or str(uuid.uuid4())
         itinerary_dict["id"] = itin_id
         now = datetime.now(timezone.utc).isoformat()
-        itinerary_dict["created_at"] = itinerary_dict.get("created_at") or now
-        itinerary_dict["updated_at"] = now
+        created_val = itinerary_dict.get("created_at")
+        if isinstance(created_val, datetime):
+            itinerary_dict["created_at"] = created_val.isoformat()
+        else:
+            itinerary_dict["created_at"] = created_val or now
+
+        updated_val = itinerary_dict.get("updated_at")
+        if isinstance(updated_val, datetime):
+            itinerary_dict["updated_at"] = updated_val.isoformat()
+        else:
+            itinerary_dict["updated_at"] = now
+
+        from app.core.security import GUEST_USER_ID
+        if itinerary_dict.get("user_id") == GUEST_USER_ID:
+            _memory_itineraries[itin_id] = itinerary_dict
+            return ItineraryResponse(**itinerary_dict)
 
         if self.client:
             try:
