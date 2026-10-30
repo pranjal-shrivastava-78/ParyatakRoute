@@ -15,7 +15,7 @@ router = APIRouter(prefix="/trips", tags=["Trips"])
 trip_service = TripService()
 
 
-@router.post("", response_model=APIResponse[TripResponse], status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=APIResponse[TripResponse], status_code=status.HTTP_201_CREATED, summary="Create New Trip")
 async def create_trip(
     trip_data: TripCreate,
     current_user: AuthenticatedUser = Depends(get_current_user),
@@ -25,7 +25,7 @@ async def create_trip(
     return APIResponse(success=True, data=created)
 
 
-@router.get("", response_model=APIResponse[TripListResponse], status_code=status.HTTP_200_OK)
+@router.get("", response_model=APIResponse[TripListResponse], status_code=status.HTTP_200_OK, summary="List Authenticated User Trips")
 async def list_trips(
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=100, description="Items per page"),
@@ -36,7 +36,7 @@ async def list_trips(
     return APIResponse(success=True, data=results)
 
 
-@router.get("/{trip_id}", response_model=APIResponse[TripResponse], status_code=status.HTTP_200_OK)
+@router.get("/{trip_id}", response_model=APIResponse[TripResponse], status_code=status.HTTP_200_OK, summary="Get Trip By ID")
 async def get_trip(
     trip_id: str,
     current_user: AuthenticatedUser = Depends(get_current_user),
@@ -46,7 +46,7 @@ async def get_trip(
     return APIResponse(success=True, data=trip)
 
 
-@router.put("/{trip_id}", response_model=APIResponse[TripResponse], status_code=status.HTTP_200_OK)
+@router.put("/{trip_id}", response_model=APIResponse[TripResponse], status_code=status.HTTP_200_OK, summary="Update Trip Details")
 async def update_trip(
     trip_id: str,
     updates: TripUpdate,
@@ -57,7 +57,7 @@ async def update_trip(
     return APIResponse(success=True, data=updated)
 
 
-@router.delete("/{trip_id}", response_model=APIResponse[dict[str, Any]], status_code=status.HTTP_200_OK)
+@router.delete("/{trip_id}", response_model=APIResponse[dict[str, Any]], status_code=status.HTTP_200_OK, summary="Delete Trip")
 async def delete_trip(
     trip_id: str,
     current_user: AuthenticatedUser = Depends(get_current_user),

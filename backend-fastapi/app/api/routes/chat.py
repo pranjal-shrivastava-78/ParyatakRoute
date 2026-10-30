@@ -13,7 +13,7 @@ from app.services.chat_service import chat_service
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
 
-@router.post("", response_model=APIResponse[ChatResponse], status_code=status.HTTP_200_OK)
+@router.post("", response_model=APIResponse[ChatResponse], status_code=status.HTTP_200_OK, summary="Travel Assistant AI Chat")
 async def chat_interaction(
     request: ChatRequest,
     current_user: AuthenticatedUser = Depends(get_current_user),

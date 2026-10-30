@@ -24,7 +24,7 @@ router = APIRouter(tags=["Travel Data"])
 travel_service = TravelDataService()
 
 
-@router.get("/destinations", response_model=APIResponse[list[NormalizedPlace]], status_code=status.HTTP_200_OK)
+@router.get("/destinations", response_model=APIResponse[list[NormalizedPlace]], status_code=status.HTTP_200_OK, summary="Search Destinations via Nominatim")
 async def search_destinations(
     query: str = Query(..., min_length=2, description="Place or city name to search"),
     limit: int = Query(5, ge=1, le=20, description="Max results"),
@@ -34,7 +34,7 @@ async def search_destinations(
     return APIResponse(success=True, data=results)
 
 
-@router.post("/directions", response_model=APIResponse[DirectionsResponse], status_code=status.HTTP_200_OK)
+@router.post("/directions", response_model=APIResponse[DirectionsResponse], status_code=status.HTTP_200_OK, summary="Calculate Driving Route via OSRM")
 async def get_directions(
     request: DirectionsRequest,
 ) -> APIResponse[DirectionsResponse]:
@@ -43,7 +43,7 @@ async def get_directions(
     return APIResponse(success=True, data=directions)
 
 
-@router.get("/weather", response_model=APIResponse[WeatherResponse], status_code=status.HTTP_200_OK)
+@router.get("/weather", response_model=APIResponse[WeatherResponse], status_code=status.HTTP_200_OK, summary="Get Weather Forecast via Open-Meteo")
 async def get_weather(
     lat: float = Query(..., ge=-90.0, le=90.0, description="Latitude"),
     lon: float = Query(..., ge=-180.0, le=180.0, description="Longitude"),
@@ -53,7 +53,7 @@ async def get_weather(
     return APIResponse(success=True, data=weather)
 
 
-@router.get("/currency/rates", response_model=APIResponse[CurrencyRatesResponse], status_code=status.HTTP_200_OK)
+@router.get("/currency/rates", response_model=APIResponse[CurrencyRatesResponse], status_code=status.HTTP_200_OK, summary="Get Currency Exchange Rates")
 async def get_currency_rates(
     base: str = Query("USD", min_length=3, max_length=3, description="Base 3-letter currency code"),
 ) -> APIResponse[CurrencyRatesResponse]:
@@ -62,7 +62,7 @@ async def get_currency_rates(
     return APIResponse(success=True, data=rates)
 
 
-@router.get("/currency/convert", response_model=APIResponse[CurrencyConvertResponse], status_code=status.HTTP_200_OK)
+@router.get("/currency/convert", response_model=APIResponse[CurrencyConvertResponse], status_code=status.HTTP_200_OK, summary="Convert Currency Amount")
 async def convert_currency(
     from_curr: str = Query(..., alias="from", min_length=3, max_length=3, description="From currency code"),
     to_curr: str = Query(..., alias="to", min_length=3, max_length=3, description="To currency code"),

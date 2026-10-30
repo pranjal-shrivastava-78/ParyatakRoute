@@ -23,7 +23,7 @@ router = APIRouter(prefix="/itineraries", tags=["Itineraries"])
 pdf_service = PDFService()
 
 
-@router.post("/generate", response_model=APIResponse[ItineraryResponse], status_code=status.HTTP_201_CREATED)
+@router.post("/generate", response_model=APIResponse[ItineraryResponse], status_code=status.HTTP_201_CREATED, summary="Generate Travel Itinerary with Groq AI")
 async def generate_itinerary(
     request: GenerateItineraryRequest,
     current_user: AuthenticatedUser = Depends(get_current_user),
@@ -37,7 +37,7 @@ async def generate_itinerary(
     )
 
 
-@router.get("/trip/{trip_id}", response_model=APIResponse[ItineraryResponse], status_code=status.HTTP_200_OK)
+@router.get("/trip/{trip_id}", response_model=APIResponse[ItineraryResponse], status_code=status.HTTP_200_OK, summary="Get Itinerary By Trip ID")
 async def get_itinerary_by_trip(
     trip_id: str,
     current_user: AuthenticatedUser = Depends(get_current_user),
@@ -47,7 +47,7 @@ async def get_itinerary_by_trip(
     return APIResponse(success=True, data=itinerary)
 
 
-@router.get("/{itinerary_id}", response_model=APIResponse[ItineraryResponse], status_code=status.HTTP_200_OK)
+@router.get("/{itinerary_id}", response_model=APIResponse[ItineraryResponse], status_code=status.HTTP_200_OK, summary="Get Itinerary By ID")
 async def get_itinerary(
     itinerary_id: str,
     current_user: AuthenticatedUser = Depends(get_current_user),
@@ -57,7 +57,7 @@ async def get_itinerary(
     return APIResponse(success=True, data=itinerary)
 
 
-@router.patch("/{itinerary_id}", response_model=APIResponse[ItineraryResponse], status_code=status.HTTP_200_OK)
+@router.patch("/{itinerary_id}", response_model=APIResponse[ItineraryResponse], status_code=status.HTTP_200_OK, summary="Patch Itinerary & Recalculate Budget")
 async def patch_itinerary(
     itinerary_id: str,
     patch_data: ItineraryPatchRequest,
@@ -68,7 +68,7 @@ async def patch_itinerary(
     return APIResponse(success=True, data=updated)
 
 
-@router.get("/{itinerary_id}/budget", response_model=APIResponse[BudgetBreakdownAnalysis], status_code=status.HTTP_200_OK)
+@router.get("/{itinerary_id}/budget", response_model=APIResponse[BudgetBreakdownAnalysis], status_code=status.HTTP_200_OK, summary="Get Itinerary Budget Analytics")
 async def get_itinerary_budget_analysis(
     itinerary_id: str,
     current_user: AuthenticatedUser = Depends(get_current_user),
@@ -82,6 +82,7 @@ async def get_itinerary_budget_analysis(
     "/{itinerary_id}/days/{day_number}/regenerate",
     response_model=APIResponse[ItineraryResponse],
     status_code=status.HTTP_200_OK,
+    summary="Surgically Regenerate Single Day Plan",
 )
 async def regenerate_day(
     itinerary_id: str = Path(...),
@@ -104,7 +105,7 @@ async def regenerate_day(
     )
 
 
-@router.get("/{itinerary_id}/export/pdf")
+@router.get("/{itinerary_id}/export/pdf", summary="Export Itinerary as PDF Document")
 async def export_itinerary_pdf(
     itinerary_id: str,
     current_user: AuthenticatedUser = Depends(get_current_user),

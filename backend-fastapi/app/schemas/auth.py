@@ -5,23 +5,51 @@ token refresh, and user profile resolution.
 """
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 
 class RegisterRequest(BaseModel):
-    name: str = Field(..., min_length=2, max_length=100, description="User's display name")
-    email: EmailStr = Field(..., max_length=255, description="Valid user email address")
-    password: str = Field(..., min_length=8, max_length=128, description="Password with min 8 characters")
+    name: str = Field(..., min_length=2, max_length=100, description="User's full display name", examples=["Pranjal Shrivastava"])
+    email: EmailStr = Field(..., max_length=255, description="Valid email address for login and notifications", examples=["traveler@paryatakroute.org"])
+    password: str = Field(..., min_length=8, max_length=128, description="Strong account password (minimum 8 characters)", examples=["SecurePassword123!"])
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "name": "Pranjal Shrivastava",
+                "email": "traveler@paryatakroute.org",
+                "password": "SecurePassword123!",
+            }
+        }
+    )
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr = Field(..., description="User's registered email address")
-    password: str = Field(..., min_length=1, description="Account password")
+    email: EmailStr = Field(..., description="Registered user email", examples=["traveler@paryatakroute.org"])
+    password: str = Field(..., min_length=1, description="Account password", examples=["SecurePassword123!"])
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "email": "traveler@paryatakroute.org",
+                "password": "SecurePassword123!",
+            }
+        }
+    )
 
 
 class RefreshTokenRequest(BaseModel):
-    refreshToken: Optional[str] = Field(default=None, alias="refreshToken")
-    refresh_token: Optional[str] = Field(default=None, alias="refresh_token")
+    refreshToken: Optional[str] = Field(default=None, alias="refreshToken", description="Refresh token string", examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."])
+    refresh_token: Optional[str] = Field(default=None, alias="refresh_token", description="Alternative snake_case refresh token alias")
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
+            "example": {
+                "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            }
+        }
+    )
 
     @property
     def token(self) -> str:

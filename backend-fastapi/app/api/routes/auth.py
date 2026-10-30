@@ -82,7 +82,7 @@ def _issue_mock_tokens(user_id: str, email: str, role: str = "user") -> AuthToke
     )
 
 
-@router.post("/register", response_model=APIResponse[AuthResponseData], status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=APIResponse[AuthResponseData], status_code=status.HTTP_201_CREATED, summary="Register New User Account")
 async def register_user(body: RegisterRequest) -> APIResponse[AuthResponseData]:
     """Register a new user account and return authenticated session tokens."""
     admin_client, anon_client = _get_supabase_clients()
@@ -198,7 +198,7 @@ async def register_user(body: RegisterRequest) -> APIResponse[AuthResponseData]:
     )
 
 
-@router.post("/login", response_model=APIResponse[AuthResponseData], status_code=status.HTTP_200_OK)
+@router.post("/login", response_model=APIResponse[AuthResponseData], status_code=status.HTTP_200_OK, summary="User Authentication & Login")
 async def login_user(body: LoginRequest) -> APIResponse[AuthResponseData]:
     """Authenticate user with email and password and return session tokens."""
     _, anon_client = _get_supabase_clients()
@@ -280,7 +280,7 @@ async def login_user(body: LoginRequest) -> APIResponse[AuthResponseData]:
     )
 
 
-@router.post("/refresh", response_model=APIResponse[dict[str, Any]], status_code=status.HTTP_200_OK)
+@router.post("/refresh", response_model=APIResponse[dict[str, Any]], status_code=status.HTTP_200_OK, summary="Refresh Access Token")
 async def refresh_tokens(body: RefreshTokenRequest) -> APIResponse[dict[str, Any]]:
     """Rotate refresh token and issue a fresh access token."""
     refresh_token = body.refreshToken or body.refresh_token
@@ -353,7 +353,7 @@ async def refresh_tokens(body: RefreshTokenRequest) -> APIResponse[dict[str, Any
         )
 
 
-@router.post("/logout", response_model=APIResponse[dict[str, str]], status_code=status.HTTP_200_OK)
+@router.post("/logout", response_model=APIResponse[dict[str, str]], status_code=status.HTTP_200_OK, summary="Log Out Active Session")
 async def logout_user(
     current_user: AuthenticatedUser = Depends(get_current_user),
 ) -> APIResponse[dict[str, str]]:
@@ -365,7 +365,7 @@ async def logout_user(
     )
 
 
-@router.get("/me", response_model=APIResponse[dict[str, Any]], status_code=status.HTTP_200_OK)
+@router.get("/me", response_model=APIResponse[dict[str, Any]], status_code=status.HTTP_200_OK, summary="Get Current Authenticated Profile")
 async def get_current_user_profile(
     current_user: AuthenticatedUser = Depends(get_current_user),
 ) -> APIResponse[dict[str, Any]]:

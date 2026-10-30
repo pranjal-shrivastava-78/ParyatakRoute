@@ -1,24 +1,35 @@
 """Chat request and response schemas for ParyatakRoute Travel Assistant."""
 from typing import List, Optional, Literal
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 ChatRole = Literal["user", "assistant", "system"]
 
 
 class ChatMessage(BaseModel):
-    role: ChatRole
-    content: str = Field(min_length=1, max_length=2000, description="Message text")
+    role: ChatRole = Field(..., description="Message role (user, assistant, or system)", examples=["user"])
+    content: str = Field(min_length=1, max_length=2000, description="Message text", examples=["What are the best local vegetarian dishes to try in Jaipur?"])
 
 
 class ChatRequest(BaseModel):
-    message: str = Field(min_length=1, max_length=2000, description="User prompt or query")
-    trip_id: Optional[str] = Field(default=None, alias="tripId", description="Optional trip ID for context")
-    itinerary_id: Optional[str] = Field(default=None, alias="itineraryId", description="Optional itinerary ID for context")
-    history: List[ChatMessage] = Field(default_factory=list, max_length=20, description="Recent conversation turns")
+    message: str = Field(min_length=1, max_length=2000, description="User prompt or travel query", examples=["What should we wear when visiting Pangong Lake in October?"])
+    trip_id: Optional[str] = Field(default=None, alias="tripId", description="Optional trip ID to supply journey context", examples=["3fa85f64-5717-4562-b3fc-2c963f66afa6"])
+    itinerary_id: Optional[str] = Field(default=None, alias="itineraryId", description="Optional itinerary ID for day-by-day context", examples=["7ca85f64-1234-5678-b3fc-2c963f66afa6"])
+    history: List[ChatMessage] = Field(default_factory=list, max_length=20, description="Recent conversation history turns")
 
-    model_config = {
-        "populate_by_name": True,
-    }
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
+            "example": {
+                "message": "What should we wear when visiting Pangong Lake in October?",
+                "trip_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "itinerary_id": "7ca85f64-1234-5678-b3fc-2c963f66afa6",
+                "history": [
+                    {"role": "user", "content": "We arrive in Leh on Day 1."},
+                    {"role": "assistant", "content": "Make sure to dedicate Day 1 to complete rest and acclimatization to the 3,500m altitude."},
+                ],
+            }
+        },
+    )
 
 
 class ChatResponse(BaseModel):

@@ -60,3 +60,33 @@ def test_settings_secret_masking():
     assert "ParyatakRoute" in settings_repr
     # Ensure sensitive fields are not in the representation
     assert settings.SUPABASE_JWT_SECRET not in settings_repr
+
+
+def test_swagger_docs_and_openapi_security(client: TestClient):
+    """Verify /docs HTML, /openapi.json schema, HTTPBearer security scheme, and logical tags."""
+    # 1. /docs returns custom branded Swagger UI HTML
+    docs_resp = client.get("/docs")
+    assert docs_resp.status_code == 200
+    assert "ParyatakRoute" in docs_resp.text
+    assert "text/html" in docs_resp.headers.get("content-type", "")
+
+    # 2. /openapi.json returns valid OpenAPI 3.x schema
+    oa_resp = client.get("/openapi.json")
+    assert oa_resp.status_code == 200
+    schema = oa_resp.json()
+    assert schema["info"]["title"] == "ParyatakRoute API"
+
+    # 3. Security schemes include HTTPBearer
+    sec_schemes = schema.get("components", {}).get("securitySchemes", {})
+    assert "HTTPBearer" in sec_schemes
+    assert sec_schemes["HTTPBearer"]["type"] == "http"
+    assert sec_schemes["HTTPBearer"]["scheme"] == "bearer"
+
+    # 4. Protected endpoints declare HTTPBearer security requirement
+    trips_post = schema["paths"]["/api/v1/trips"]["post"]
+    assert {"HTTPBearer": []} in trips_post.get("security", [])
+
+    # 5. Core tags are properly configured
+    tags = {t["name"] for t in schema.get("tags", [])}
+    assert {"Health", "Authentication", "Trips", "Itineraries", "Favourites", "Chat", "Travel Data"}.issubset(tags)
+

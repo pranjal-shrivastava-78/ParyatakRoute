@@ -8,7 +8,7 @@ from typing import AsyncGenerator
 
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 
 from app.api.router import api_v1_router
 from app.api.routes.health import router as root_health_router
@@ -31,14 +31,39 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("ParyatakRoute FastAPI backend shutting down")
 
 
+from fastapi.openapi.docs import get_swagger_ui_oauth2_redirect_html
+from app.core.docs import OPENAPI_DESCRIPTION, OPENAPI_TAGS, get_paryatak_swagger_ui_html
+
 app = FastAPI(
-    title="ParyatakRoute Backend",
-    description="High-performance FastAPI backend for the ParyatakRoute intelligent travel itinerary planner.",
+    title="ParyatakRoute API",
+    summary="Intelligent Travel Itinerary Planner & Real-Time Geospatial Engine",
+    description=OPENAPI_DESCRIPTION,
     version="1.0.0",
-    docs_url="/docs",
+    docs_url=None,  # Custom Swagger UI handler mounted at /docs
     redoc_url="/redoc",
+    openapi_tags=OPENAPI_TAGS,
     lifespan=lifespan,
+    contact={
+        "name": "ParyatakRoute Engineering",
+        "email": "engineering@paryatakroute.org",
+    },
+    license_info={
+        "name": "Proprietary",
+    },
 )
+
+
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui() -> HTMLResponse:
+    """Renders the custom branded ParyatakRoute Swagger UI documentation."""
+    return get_paryatak_swagger_ui_html()
+
+
+@app.get("/docs/oauth2-redirect", include_in_schema=False)
+async def swagger_ui_redirect():
+    """OAuth2 redirect handler for Swagger UI."""
+    return get_swagger_ui_oauth2_redirect_html()
+
 
 # Centralized exception handling
 register_exception_handlers(app)

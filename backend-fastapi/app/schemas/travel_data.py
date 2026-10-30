@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 
 class NormalizedPlace(BaseModel):
@@ -15,18 +15,31 @@ class NormalizedPlace(BaseModel):
 
 
 class Coordinate(BaseModel):
-    latitude: float
-    longitude: float
+    latitude: float = Field(..., description="WGS84 latitude coordinate", examples=[18.5204])
+    longitude: float = Field(..., description="WGS84 longitude coordinate", examples=[73.8567])
 
 
 class DirectionsRequest(BaseModel):
     coordinates: Optional[List[List[float]]] = Field(
         default=None,
-        description="List of [longitude, latitude] coordinate pairs",
+        description="List of [longitude, latitude] coordinate pairs along route",
+        examples=[[[73.8567, 18.5204], [72.8777, 19.0760]]],
     )
-    start: Optional[Coordinate] = None
-    destination: Optional[Coordinate] = None
-    mode: Optional[str] = "driving"
+    start: Optional[Coordinate] = Field(default=None, description="Starting waypoint coordinate")
+    destination: Optional[Coordinate] = Field(default=None, description="Ending waypoint coordinate")
+    mode: Optional[str] = Field(default="driving", description="Travel mode (e.g. driving, walking)", examples=["driving"])
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "coordinates": [
+                    [73.8567, 18.5204],
+                    [72.8777, 19.0760],
+                ],
+                "mode": "driving",
+            }
+        }
+    )
 
     @model_validator(mode="after")
     def populate_coordinates(self):

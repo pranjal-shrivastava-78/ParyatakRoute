@@ -1,10 +1,17 @@
 import jwt
 from typing import Optional
 from pydantic import BaseModel
-from fastapi import Header
+from fastapi import Header, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.core.config import settings
 from app.core.exceptions import UnauthorizedException
 from app.core.logging import logger
+
+http_bearer = HTTPBearer(
+    auto_error=False,
+    scheme_name="HTTPBearer",
+    description="Supabase JWT Bearer token. Enter your access token obtained from /api/v1/auth/login or /api/v1/auth/register.",
+)
 
 _jwks_client: Optional[jwt.PyJWKClient] = None
 
@@ -30,20 +37,31 @@ class AuthenticatedUser(BaseModel):
     role: str = "authenticated"
 
 
-def get_current_user(authorization: Optional[str] = Header(None)) -> AuthenticatedUser:
+def get_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(http_bearer),
+    authorization: Optional[str] = Header(None),
+) -> AuthenticatedUser:
     """
     Validates Supabase Bearer JWT token from Authorization header and extracts user identity.
     Supports both live asymmetric tokens (ES256/RS256 via Supabase JWKS) and symmetric tokens (HS256).
     Enforces signature validation, expiration, and issuer sanity.
+    Exposes OpenAPI HTTPBearer security scheme for Swagger UI interactive authorization.
     """
-    if not authorization:
+    token: Optional[str] = None
+
+    if credentials and credentials.credentials:
+        token = credentials.credentials.strip()
+    elif authorization:
+        parts = authorization.split(" ")
+        if len(parts) != 2 or parts[0].lower() != "bearer":
+            raise UnauthorizedException(
+                "Invalid authorization header format. Expected 'Bearer <token>'",
+                code="INVALID_TOKEN",
+            )
+        token = parts[1].strip()
+
+    if not token:
         raise UnauthorizedException("Authorization header is missing", code="UNAUTHORIZED")
-
-    parts = authorization.split(" ")
-    if len(parts) != 2 or parts[0].lower() != "bearer":
-        raise UnauthorizedException("Invalid authorization header format. Expected 'Bearer <token>'", code="INVALID_TOKEN")
-
-    token = parts[1].strip()
 
     try:
         header = jwt.get_unverified_header(token)

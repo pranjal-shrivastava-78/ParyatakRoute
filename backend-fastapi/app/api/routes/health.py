@@ -4,22 +4,22 @@ from app.repositories.supabase_client import get_supabase_client
 from app.schemas.common import APIResponse
 from app.core.config import settings
 
-router = APIRouter(tags=["Health Probes"])
+router = APIRouter(tags=["Health"])
 
 
-@router.get("", response_model=APIResponse[dict])
+@router.get("", response_model=APIResponse[dict], summary="Liveness Health Check")
 @router.get("/", response_model=APIResponse[dict], include_in_schema=False)
 async def health_check():
-    """Liveness probe: reports server process is running."""
+    """Liveness probe reporting that the ParyatakRoute backend server process is operational."""
     return APIResponse(
         success=True,
         data={"status": "ok"},
     )
 
 
-@router.get("/ready")
+@router.get("/ready", summary="Readiness & Database Probe")
 async def readiness_check():
-    """Readiness probe: reports server and database readiness."""
+    """Readiness probe checking server uptime and Supabase PostgreSQL database connectivity."""
     client = get_supabase_client()
     if settings.APP_ENV == "production" and client is None:
         return JSONResponse(

@@ -18,7 +18,7 @@ router = APIRouter(prefix="/favourites", tags=["Favourites"])
 favourite_service = FavouriteService()
 
 
-@router.post("", response_model=APIResponse[FavouriteResponse], status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=APIResponse[FavouriteResponse], status_code=status.HTTP_201_CREATED, summary="Bookmark Destination as Favourite")
 async def add_favourite(
     favourite_data: FavouriteCreate,
     current_user: AuthenticatedUser = Depends(get_current_user),
@@ -28,7 +28,7 @@ async def add_favourite(
     return APIResponse(success=True, data=result)
 
 
-@router.get("", response_model=APIResponse[FavouriteListResponse], status_code=status.HTTP_200_OK)
+@router.get("", response_model=APIResponse[FavouriteListResponse], status_code=status.HTTP_200_OK, summary="List User Saved Favourites")
 async def list_favourites(
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=100, description="Items per page"),
@@ -39,7 +39,7 @@ async def list_favourites(
     return APIResponse(success=True, data=results)
 
 
-@router.delete("/{favourite_id}", response_model=APIResponse[dict[str, Any]], status_code=status.HTTP_200_OK)
+@router.delete("/{favourite_id}", response_model=APIResponse[dict[str, Any]], status_code=status.HTTP_200_OK, summary="Delete Saved Favourite")
 async def remove_favourite(
     favourite_id: str,
     current_user: AuthenticatedUser = Depends(get_current_user),

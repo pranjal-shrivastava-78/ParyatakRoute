@@ -1,5 +1,7 @@
 # ParyatakRoute
 
+## Project Overview
+
 ParyatakRoute is an intelligent travel itinerary planning backend that generates structured, personalized day-by-day travel schedules from user preferences including destination, dates, budget, travel style, and interests. The platform calculates deterministic budget breakdowns, coordinates external travel data, and ensures multi-tenant security through PostgreSQL Row Level Security.
 
 ## Tech Stack
@@ -10,7 +12,7 @@ ParyatakRoute is an intelligent travel itinerary planning backend that generates
 - **Document Export:** ReportLab (PDF itinerary generation)
 - **External APIs:** OpenStreetMap Nominatim (geocoding), Project OSRM (routing), Open-Meteo (weather forecasts), ExchangeRate-API (currency conversion)
 
-## Features
+## Key Features
 
 - **Trip Management:** Full CRUD operations for trips with date validation and duration constraints.
 - **AI Itinerary Generation:** Structured JSON day plans with categorized activities, timings, and cost estimates.
@@ -48,62 +50,6 @@ paryatakroute/
 ├── FRONTEND_INTEGRATION.md      # Frontend API integration contract
 └── features.md                  # Product feature specification
 ```
-
-## Setup & Installation
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/pranjal-shrivastava-78/ParyatakRoute.git
-cd ParyatakRoute/backend-fastapi
-```
-
-### 2. Set up virtual environment
-
-```bash
-python -m venv .venv
-# Windows PowerShell:
-.\.venv\Scripts\Activate.ps1
-# Linux / macOS:
-source .venv/bin/activate
-```
-
-### 3. Install dependencies
-
-```bash
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-### 4. Configure environment variables
-
-Copy the template file:
-
-```bash
-cp .env.example .env
-```
-
-Set the required values in `.env`:
-
-```env
-APP_ENV=development
-PORT=8000
-SUPABASE_URL=https://<your-project-ref>.supabase.co
-SUPABASE_PUBLISHABLE_KEY=<your-anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
-SUPABASE_JWT_SECRET=<your-jwt-secret>
-GROQ_API_KEY=<your-groq-api-key>
-```
-
-### 5. Run the server
-
-```bash
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-- API Base URL: `http://127.0.0.1:8000`
-- Interactive API Docs: `http://127.0.0.1:8000/docs`
-- Health Endpoint: `http://127.0.0.1:8000/health`
 
 ## Testing
 

@@ -62,48 +62,69 @@ class ItineraryBudget(BaseModel):
 
 
 class ItineraryUpdate(BaseModel):
-    title: Optional[str] = Field(default=None, max_length=200)
-    summary: Optional[str] = None
-    status: Optional[ItineraryStatus] = None
-    days: Optional[List[DayPlan]] = None
+    title: Optional[str] = Field(default=None, max_length=200, description="Updated itinerary title", examples=["5-Day Ladakh Cultural Experience"])
+    summary: Optional[str] = Field(default=None, description="Updated trip summary")
+    status: Optional[ItineraryStatus] = Field(default=None, description="Itinerary lifecycle status", examples=["confirmed"])
+    days: Optional[List[DayPlan]] = Field(default=None, description="Updated day plans with activities")
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
+            "example": {
+                "title": "Updated 5-Day Himalayan Monastery Tour",
+                "summary": "Customized cultural itinerary across Leh, Nubra Valley, and Pangong Tso with adjusted activities.",
+                "status": "confirmed",
+            }
+        },
+    )
 
 
 ItineraryPatchRequest = ItineraryUpdate
 
 
 class ItineraryResponse(BaseModel):
-    id: str
-    trip_id: str
-    user_id: str
-    title: str
-    summary: Optional[str] = None
-    status: ItineraryStatus = "generated"
-    days: List[DayPlan] = Field(default_factory=list)
-    budget: ItineraryBudget = Field(default_factory=ItineraryBudget)
-    assumptions: List[str] = Field(default_factory=list)
-    generation_metadata: Dict[str, Any] = Field(default_factory=dict)
+    id: str = Field(..., description="Itinerary UUID")
+    trip_id: str = Field(..., description="Associated Trip UUID")
+    user_id: str = Field(..., description="Owner User UUID")
+    title: str = Field(..., description="Itinerary Title")
+    summary: Optional[str] = Field(default=None, description="AI-generated summary")
+    status: ItineraryStatus = Field(default="generated", description="Current status")
+    days: List[DayPlan] = Field(default_factory=list, description="Day-by-day scheduled activities")
+    budget: ItineraryBudget = Field(default_factory=ItineraryBudget, description="Calculated budget breakdown")
+    assumptions: List[str] = Field(default_factory=list, description="Travel constraints or season assumptions")
+    generation_metadata: Dict[str, Any] = Field(default_factory=dict, description="Groq AI model & tokens metadata")
     created_at: datetime
     updated_at: datetime
 
 
 class BudgetBreakdownAnalysis(BaseModel):
-    itinerary_id: str
-    trip_budget: float
-    total_estimated: float
-    currency: str
-    is_over_budget: bool
-    difference: float
-    categories: BudgetCategoryBreakdown
+    itinerary_id: str = Field(..., description="Itinerary UUID")
+    trip_budget: float = Field(..., description="Trip target budget")
+    total_estimated: float = Field(..., description="Total estimated cost across all days")
+    currency: str = Field(..., description="Currency code (e.g., INR)")
+    is_over_budget: bool = Field(..., description="Whether estimated total exceeds target budget")
+    difference: float = Field(..., description="Absolute variance between estimated and target budget")
+    categories: BudgetCategoryBreakdown = Field(..., description="Deterministic category totals")
 
 
 class GenerateItineraryRequest(BaseModel):
-    trip_id: Optional[str] = Field(default=None, alias="tripId")
-    preferences: Optional[Dict[str, Any]] = None
-    regenerate: bool = False
+    trip_id: Optional[str] = Field(default=None, alias="tripId", description="UUID of existing Trip to base generation on", examples=["3fa85f64-5717-4562-b3fc-2c963f66afa6"])
+    preferences: Optional[Dict[str, Any]] = Field(default=None, description="Optional ad-hoc preferences overrides")
+    regenerate: bool = Field(default=False, description="Whether to overwrite existing generated itinerary")
 
-    model_config = {
-        "populate_by_name": True,
-    }
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
+            "example": {
+                "trip_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "regenerate": False,
+                "preferences": {
+                    "pacing": "moderate",
+                    "mustInclude": ["Thiksey Monastery", "Pangong Lake"],
+                },
+            }
+        },
+    )
 
     @model_validator(mode="after")
     def check_inputs(self):
@@ -113,6 +134,22 @@ class GenerateItineraryRequest(BaseModel):
 
 
 class RegenerateDayRequest(BaseModel):
-    instruction: Optional[str] = None
-    preferences: Optional[Dict[str, Any]] = None
+    instruction: Optional[str] = Field(
+        default=None,
+        description="Surgical prompt instructing Groq AI how to replan this specific day",
+        examples=["Swap outdoor high-altitude trekking for Tibetan art museums, tea houses, and craft workshops due to rain."],
+    )
+    preferences: Optional[Dict[str, Any]] = Field(default=None, description="Optional ad-hoc day preference overrides")
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
+            "example": {
+                "instruction": "Swap outdoor hiking for indoor Tibetan art museums, handicraft markets, and local cafe visits.",
+                "preferences": {
+                    "pacing": "relaxed",
+                },
+            }
+        },
+    )
 
