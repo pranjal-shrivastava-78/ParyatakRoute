@@ -7,7 +7,7 @@ import { DEMO_CREDENTIALS } from '../config/authConfig';
 import BrandLogo from '../components/BrandLogo';
 
 export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(DEMO_CREDENTIALS.email);
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -163,7 +163,7 @@ export const LoginPage: React.FC = () => {
             {isDemoLoading ? (
               <>
                 <Loader2 size={15} className="spinner" />
-                <span>Signing in to Demo...</span>
+                <span>Signing in...</span>
               </>
             ) : (
               <>

@@ -37,10 +37,10 @@ profile_repo = ProfileRepository()
 # Mock users store for test / offline environments
 _mock_users: Dict[str, Dict[str, Any]] = {
     "demo@paryatakroute.in": {
-        "id": "a95fb7ab-5b3c-4074-ac2c-ce8621cc6017",
+        "id": "7abf33cc-ca1c-4598-aee8-8c819871dab9",
         "name": "Demo Traveler",
         "email": "demo@paryatakroute.in",
-        "password": "Paryatak@Demo2026",
+        "password": "Demo@12345",
         "role": "authenticated",
         "status": "active",
         "createdAt": "2026-10-30T00:00:00Z",
@@ -402,7 +402,7 @@ async def get_current_user_profile(
     return APIResponse(success=True, data=payload)
 
 
-DEMO_USER_ID = "a95fb7ab-5b3c-4074-ac2c-ce8621cc6017"
+DEMO_USER_ID = "7abf33cc-ca1c-4598-aee8-8c819871dab9"
 DEMO_USER_EMAIL = "demo@paryatakroute.in"
 
 

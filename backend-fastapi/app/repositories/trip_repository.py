@@ -11,7 +11,7 @@ from app.core.logging import logger
 _memory_trips: Dict[str, Dict[str, Any]] = {
     "a1111111-2222-3333-4444-555555555551": {
         "id": "a1111111-2222-3333-4444-555555555551",
-        "user_id": "a95fb7ab-5b3c-4074-ac2c-ce8621cc6017",
+        "user_id": "7abf33cc-ca1c-4598-aee8-8c819871dab9",
         "destination": "Jaipur, Rajasthan",
         "starting_city": "Delhi",
         "start_date": "2026-11-15",
@@ -20,7 +20,7 @@ _memory_trips: Dict[str, Dict[str, Any]] = {
         "budget": 25000.0,
         "currency": "INR",
         "travellers": 2,
-        "travel_style": "cultural",
+        "travel_style": "balanced",
         "interests": ["heritage", "palaces", "bazaars"],
         "transport_preference": "train",
         "accommodation_preference": "heritage haveli",
@@ -31,7 +31,7 @@ _memory_trips: Dict[str, Dict[str, Any]] = {
     },
     "a2222222-2222-3333-4444-555555555552": {
         "id": "a2222222-2222-3333-4444-555555555552",
-        "user_id": "a95fb7ab-5b3c-4074-ac2c-ce8621cc6017",
+        "user_id": "7abf33cc-ca1c-4598-aee8-8c819871dab9",
         "destination": "Goa, India",
         "starting_city": "Mumbai",
         "start_date": "2026-12-01",
@@ -40,7 +40,7 @@ _memory_trips: Dict[str, Dict[str, Any]] = {
         "budget": 35000.0,
         "currency": "INR",
         "travellers": 2,
-        "travel_style": "balanced",
+        "travel_style": "relaxed",
         "interests": ["beaches", "seafood", "heritage"],
         "transport_preference": "flight",
         "accommodation_preference": "beach resort",
@@ -50,7 +50,7 @@ _memory_trips: Dict[str, Dict[str, Any]] = {
     },
     "a3333333-2222-3333-4444-555555555553": {
         "id": "a3333333-2222-3333-4444-555555555553",
-        "user_id": "a95fb7ab-5b3c-4074-ac2c-ce8621cc6017",
+        "user_id": "7abf33cc-ca1c-4598-aee8-8c819871dab9",
         "destination": "Manali & Solang Valley, Himachal Pradesh",
         "starting_city": "Chandigarh",
         "start_date": "2026-12-10",

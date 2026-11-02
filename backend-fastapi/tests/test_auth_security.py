@@ -112,8 +112,8 @@ def test_register_and_login_flow(client: TestClient):
 def test_demo_account_instant_login(client: TestClient):
     """Demo account credentials authenticate immediately and access demo trips."""
     demo_email = "demo@paryatakroute.in"
-    demo_password = "Paryatak@Demo2026"
-    demo_user_id = "a95fb7ab-5b3c-4074-ac2c-ce8621cc6017"
+    demo_password = "Demo@12345"
+    demo_user_id = "7abf33cc-ca1c-4598-aee8-8c819871dab9"
 
     # 1. Instant login with demo credentials
     response = client.post(
