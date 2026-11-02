@@ -73,10 +73,21 @@ def test_swagger_docs_and_openapi_security(client: TestClient):
     assert "text/html" in docs_resp.headers.get("content-type", "")
     assert "no-cache" in docs_resp.headers.get("cache-control", "").lower()
 
-    # 1b. /docs/swagger and /docs?format=swagger return Swagger UI
+    # 1a. Verification of custom domain URL and official brand emblem
+    assert "https://paryatakroute.itspranjal.in/" in docs_resp.text
+    assert "paryatakroute.vercel.app" not in docs_resp.text
+    assert "data:image/png;base64," in docs_resp.text
+    assert "brand-emblem-img" in docs_resp.text
+    assert "hero-brand-badge" in docs_resp.text
+    assert "footer-emblem-img" in docs_resp.text
+
+    # 1b. /docs/swagger and /docs?format=swagger return Swagger UI with official branding
     swagger_resp = client.get("/docs/swagger")
     assert swagger_resp.status_code == 200
     assert "swagger-ui" in swagger_resp.text
+    assert "https://paryatakroute.itspranjal.in/" in swagger_resp.text
+    assert "paryatakroute.vercel.app" not in swagger_resp.text
+    assert "paryatak-brand-img" in swagger_resp.text
 
     swagger_param_resp = client.get("/docs?format=swagger")
     assert swagger_param_resp.status_code == 200

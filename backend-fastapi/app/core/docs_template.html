@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ParyatakRoute API Documentation — Developer Portal</title>
-    <link rel="icon" type="image/svg+xml" href="{{FAVICON_SVG}}">
+    <link rel="icon" type="image/png" href="{{PARYATAK_FAVICON_DATA_URI}}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -75,23 +75,19 @@
             text-decoration: none;
         }
 
-        .brand-emblem {
-            width: 38px;
-            height: 38px;
-            background: #112B23;
-            border: 1.5px solid var(--pr-terracotta);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+        .brand-emblem-img {
+            height: 42px;
+            width: auto;
+            aspect-ratio: 0.81;
+            object-fit: contain;
+            display: block;
             flex-shrink: 0;
+            filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.28));
+            transition: transform 0.2s ease;
         }
 
-        .brand-emblem svg {
-            width: 22px;
-            height: 22px;
-            fill: var(--pr-terracotta);
+        .brand-lockup:hover .brand-emblem-img {
+            transform: scale(1.05);
         }
 
         .brand-text {
@@ -385,6 +381,45 @@
             background: radial-gradient(circle, rgba(217, 119, 69, 0.25) 0%, transparent 70%);
             border-radius: 50%;
             pointer-events: none;
+        }
+
+        .hero-brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            padding: 6px 14px;
+            border-radius: var(--pr-radius-pill);
+            margin-bottom: 20px;
+            backdrop-filter: blur(4px);
+        }
+
+        .hero-badge-emblem {
+            height: 24px;
+            width: auto;
+            aspect-ratio: 0.81;
+            object-fit: contain;
+            display: block;
+        }
+
+        .hero-badge-title {
+            font-weight: 700;
+            font-size: 0.84rem;
+            color: #FFFFFF;
+            letter-spacing: -0.01em;
+        }
+
+        .hero-badge-sep {
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 0.75rem;
+        }
+
+        .hero-badge-version {
+            color: var(--pr-terracotta);
+            font-weight: 700;
+            font-size: 0.76rem;
+            font-family: 'JetBrains Mono', monospace;
         }
 
         .hero-title {
@@ -980,6 +1015,16 @@
             gap: 12px;
         }
 
+        .footer-emblem-img {
+            height: 32px;
+            width: auto;
+            aspect-ratio: 0.81;
+            object-fit: contain;
+            display: block;
+            flex-shrink: 0;
+            filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.2));
+        }
+
         .footer-links {
             display: flex;
             align-items: center;
@@ -1038,12 +1083,8 @@
 <body>
     <!-- Top Navigation Bar -->
     <header class="top-navbar">
-        <a href="#overview" class="brand-lockup">
-            <div class="brand-emblem">
-                <svg viewBox="0 0 24 24">
-                    <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
-                </svg>
-            </div>
+        <a href="/docs" class="brand-lockup" title="ParyatakRoute Developer Documentation">
+            <img src="{{EMBLEM_DARK_DATA_URI}}" alt="ParyatakRoute Official Compass Pin Emblem" class="brand-emblem-img" width="34" height="42">
             <div class="brand-text">
                 <span class="brand-name">Paryatak<span>Route</span></span>
                 <span class="brand-tagline">Your Journey, Intelligently Planned.</span>
@@ -1067,7 +1108,7 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                 <span>Swagger</span>
             </a>
-            <a href="https://paryatakroute.vercel.app" target="_blank" rel="noopener noreferrer" class="btn-visit-main">
+            <a href="https://paryatakroute.itspranjal.in/" target="_blank" rel="noopener noreferrer" class="btn-visit-main">
                 <span>Visit ParyatakRoute</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
             </a>
@@ -1122,13 +1163,19 @@
         <main class="content-area">
             <!-- Hero Banner -->
             <section class="hero-banner" id="overview">
+                <div class="hero-brand-badge">
+                    <img src="{{EMBLEM_DARK_DATA_URI}}" alt="ParyatakRoute Official Compass Pin Emblem" class="hero-badge-emblem" width="22" height="27">
+                    <span class="hero-badge-title">Paryatak<span style="color:var(--pr-terracotta);">Route</span> Developer Platform</span>
+                    <span class="hero-badge-sep">•</span>
+                    <span class="hero-badge-version">v1.0.0</span>
+                </div>
                 <h1 class="hero-title">Powering <span>Smarter</span> Travel Experiences</h1>
                 <p class="hero-desc">
                     Explore the ParyatakRoute REST API and build intelligent travel applications with AI-driven itinerary generation, deterministic budget breakdowns, destination discovery, and personalized travel planning.
                 </p>
                 <div class="hero-buttons">
                     <a href="#sec-itineraries" class="hero-btn-primary">Explore API Reference</a>
-                    <a href="https://paryatakroute.vercel.app" target="_blank" rel="noopener noreferrer" class="hero-btn-secondary">Visit ParyatakRoute</a>
+                    <a href="https://paryatakroute.itspranjal.in/" target="_blank" rel="noopener noreferrer" class="hero-btn-secondary">Visit ParyatakRoute</a>
                     <a href="/docs/swagger" class="hero-btn-secondary">Open Swagger UI</a>
                 </div>
             </section>
@@ -1300,15 +1347,13 @@ http://localhost:8000/api/v1</pre>
     <footer class="portal-footer">
         <div class="footer-content">
             <div class="footer-brand">
-                <div class="brand-emblem" style="width:32px; height:32px;">
-                    <svg viewBox="0 0 24 24" style="width:18px; height:18px;"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
-                </div>
-                <span style="font-weight:700; font-size:1rem;">ParyatakRoute Developer Portal</span>
+                <img src="{{EMBLEM_DARK_DATA_URI}}" alt="ParyatakRoute Official Compass Pin Emblem" class="footer-emblem-img" width="28" height="34">
+                <span style="font-weight:700; font-size:1rem; color:#FFFFFF;">Paryatak<span style="color:var(--pr-terracotta);">Route</span> Developer Portal</span>
                 <span style="color:rgba(255,255,255,0.5);">•</span>
                 <span style="font-size:0.82rem; color:rgba(255,255,255,0.7);">Your Journey, Intelligently Planned.</span>
             </div>
             <div class="footer-links">
-                <a href="https://paryatakroute.vercel.app" target="_blank" rel="noopener noreferrer" class="footer-link">Main Website</a>
+                <a href="https://paryatakroute.itspranjal.in/" target="_blank" rel="noopener noreferrer" class="footer-link">Main Website</a>
                 <a href="/openapi.json" target="_blank" class="footer-link">OpenAPI JSON</a>
                 <a href="/docs/swagger" class="footer-link">Swagger UI</a>
                 <a href="/redoc" target="_blank" class="footer-link">ReDoc</a>

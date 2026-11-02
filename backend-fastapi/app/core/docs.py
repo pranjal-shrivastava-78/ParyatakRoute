@@ -6,8 +6,13 @@ interactive API explorer, live health status, code snippet generators, and brand
 """
 from fastapi.responses import HTMLResponse
 
-# Official ParyatakRoute Favicon (Forest Green background with Terracotta Compass Star)
-PARYATAK_FAVICON_SVG = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0 0 32 32'%20fill='none'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%23183D32'/%3E%3Cpath%20d='M16%205L19%2013L27%2016L19%2019L16%2027L13%2019L5%2016L13%2013L16%205Z'%20fill='%23D97745'/%3E%3Ccircle%20cx='16'%20cy='16'%20r='3.5'%20fill='%23F7F5EF'/%3E%3C/svg%3E"
+from app.core.brand import (
+    EMBLEM_DARK_DATA_URI,
+    EMBLEM_LIGHT_DATA_URI,
+    PARYATAK_FAVICON_DATA_URI,
+    PARYATAK_FAVICON_SVG,
+    MAIN_WEBSITE_URL,
+)
 
 OPENAPI_DESCRIPTION = """
 ### Personalized Travel Itinerary Planning Engine & Geospatial Backend
@@ -125,22 +130,14 @@ body {
     text-decoration: none;
 }
 
-.paryatak-logo-icon {
-    width: 38px;
+.paryatak-brand-img {
     height: 38px;
-    background: #112B23;
-    border: 1.5px solid var(--pr-terracotta);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-.paryatak-logo-icon svg {
-    width: 22px;
-    height: 22px;
-    fill: var(--pr-terracotta);
+    width: auto;
+    aspect-ratio: 0.81;
+    object-fit: contain;
+    display: block;
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
 }
 
 .paryatak-brand-text {
@@ -253,7 +250,7 @@ def get_paryatak_swagger_ui_html() -> HTMLResponse:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ParyatakRoute API Documentation — Swagger UI</title>
-    <link rel="icon" type="image/svg+xml" href="{PARYATAK_FAVICON_SVG}">
+    <link rel="icon" type="image/png" href="{PARYATAK_FAVICON_DATA_URI}">
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
     <style>
         {SWAGGER_CUSTOM_CSS}
@@ -261,12 +258,8 @@ def get_paryatak_swagger_ui_html() -> HTMLResponse:
 </head>
 <body>
     <header class="paryatak-topbar">
-        <a href="/docs" class="paryatak-brand">
-            <div class="paryatak-logo-icon">
-                <svg viewBox="0 0 24 24">
-                    <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
-                </svg>
-            </div>
+        <a href="/docs" class="paryatak-brand" title="ParyatakRoute Modern Documentation">
+            <img src="{EMBLEM_DARK_DATA_URI}" alt="ParyatakRoute Compass Pin Emblem" class="paryatak-brand-img" width="31" height="38">
             <div class="paryatak-brand-text">
                 <span class="paryatak-brand-name">Paryatak<span>Route</span></span>
                 <span class="paryatak-brand-tagline">Your Journey, Intelligently Planned.</span>
@@ -277,6 +270,7 @@ def get_paryatak_swagger_ui_html() -> HTMLResponse:
             <a href="/docs" class="paryatak-pill pill-portal">← Back to Modern Docs</a>
         </div>
         <nav class="paryatak-nav-links">
+            <a href="{MAIN_WEBSITE_URL}" target="_blank" rel="noopener noreferrer" class="paryatak-nav-link">Main Website</a>
             <a href="/openapi.json" target="_blank" class="paryatak-nav-link">OpenAPI Spec</a>
             <a href="/health" target="_blank" class="paryatak-nav-link">Health Status</a>
             <a href="/redoc" class="paryatak-nav-link">ReDoc</a>

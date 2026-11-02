@@ -137,7 +137,7 @@ graph TD
 ### Backend Configurations (`backend-fastapi/.env`)
 - `APP_ENV`: `development` | `production` | `test`
 - `PORT`: `8000` (Render binds to `$PORT`)
-- `CORS_ALLOWED_ORIGINS`: `http://localhost:5173,http://localhost:3000,https://paryatakroute.vercel.app`
+- `CORS_ALLOWED_ORIGINS`: `http://localhost:5173,http://localhost:3000,https://paryatakroute.itspranjal.in`
 - `SUPABASE_URL`: Remote Supabase project URL (`https://ygfksgxttlcwaruzwoch.supabase.co`)
 - `SUPABASE_SERVICE_ROLE_KEY`: Secret service role key for administrative persistence
 - `SUPABASE_JWT_SECRET`: Secret key for HS256 symmetric JWT validation
