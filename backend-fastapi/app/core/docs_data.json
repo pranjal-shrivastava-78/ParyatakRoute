@@ -1,0 +1,1698 @@
+{
+  "categories": [
+    {
+      "id": "authentication",
+      "title": "Authentication",
+      "badge": "Auth",
+      "description": "User registration, session login, JWT Bearer token refresh, session revocation, and profile management.",
+      "patterns": [
+        "^/api/v1/auth/"
+      ]
+    },
+    {
+      "id": "itineraries",
+      "title": "Travel & Itinerary",
+      "badge": "AI & Itinerary",
+      "description": "AI-powered itinerary generation via Groq LLM, multi-day chunking, surgical day regeneration, budget analytics, and high-resolution PDF compilation.",
+      "patterns": [
+        "^/api/v1/itineraries"
+      ]
+    },
+    {
+      "id": "trips",
+      "title": "Trips",
+      "badge": "Trips CRUD",
+      "description": "Trip lifecycle management: create, inspect, update, and delete trip records with user tenant isolation (BOLA protection).",
+      "patterns": [
+        "^/api/v1/trips"
+      ]
+    },
+    {
+      "id": "explore",
+      "title": "Explore & Geospatial",
+      "badge": "Geospatial",
+      "description": "OpenStreetMap Nominatim geocoding, OSRM driving route calculations, Open-Meteo weather forecasts, and currency exchange rates.",
+      "patterns": [
+        "^/api/v1/destinations",
+        "^/api/v1/directions",
+        "^/api/v1/weather",
+        "^/api/v1/currency"
+      ]
+    },
+    {
+      "id": "chat",
+      "title": "AI Assistant",
+      "badge": "AI Assistant",
+      "description": "Context-aware conversational travel assistant powered by Groq AI, leveraging user trip and itinerary context.",
+      "patterns": [
+        "^/api/v1/chat"
+      ]
+    },
+    {
+      "id": "favourites",
+      "title": "Saved Items",
+      "badge": "Bookmarks",
+      "description": "Destination bookmarks and saved places with user-specific duplicate protection and ownership enforcement.",
+      "patterns": [
+        "^/api/v1/favourites"
+      ]
+    },
+    {
+      "id": "system",
+      "title": "System & Health",
+      "badge": "Probes",
+      "description": "Application root index, liveness health probes, Supabase PostgreSQL database readiness checks, and error responses.",
+      "patterns": [
+        "^/$",
+        "^/health",
+        "^/api/v1/health"
+      ]
+    }
+  ],
+  "endpoints": {
+    "authentication": [
+      {
+        "id": "post-api-v1-auth-login",
+        "path": "/api/v1/auth/login",
+        "method": "POST",
+        "summary": "User Authentication & Login",
+        "description": "Authenticate user with email and password and return session tokens.",
+        "tags": [
+          "Authentication"
+        ],
+        "auth": false,
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "example": {
+            "email": "traveler@paryatakroute.in",
+            "password": "ParyatakPass123!"
+          },
+          "schema_title": "RequestBody"
+        },
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "post-api-v1-auth-logout",
+        "path": "/api/v1/auth/logout",
+        "method": "POST",
+        "summary": "Log Out Active Session",
+        "description": "Invalidate active user session.",
+        "tags": [
+          "Authentication"
+        ],
+        "auth": true,
+        "parameters": [],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "delete-api-v1-auth-me",
+        "path": "/api/v1/auth/me",
+        "method": "DELETE",
+        "summary": "Delete Current Authenticated User Account",
+        "description": "Delete authenticated user account. Protected for permanent demo account.",
+        "tags": [
+          "Authentication"
+        ],
+        "auth": true,
+        "parameters": [],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "get-api-v1-auth-me",
+        "path": "/api/v1/auth/me",
+        "method": "GET",
+        "summary": "Get Current Authenticated Profile",
+        "description": "Return the currently authenticated user's profile and Supabase identity.",
+        "tags": [
+          "Authentication"
+        ],
+        "auth": true,
+        "parameters": [],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "patch-api-v1-auth-me",
+        "path": "/api/v1/auth/me",
+        "method": "PATCH",
+        "summary": "Update Current Authenticated Profile",
+        "description": "Update profile information (display name, avatar) for the authenticated user.",
+        "tags": [
+          "Authentication"
+        ],
+        "auth": true,
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "example": {
+            "name": {},
+            "avatar_url": {}
+          },
+          "schema_title": "RequestBody"
+        },
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "post-api-v1-auth-refresh",
+        "path": "/api/v1/auth/refresh",
+        "method": "POST",
+        "summary": "Refresh Access Token",
+        "description": "Rotate refresh token and issue a fresh access token.",
+        "tags": [
+          "Authentication"
+        ],
+        "auth": false,
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "example": {
+            "refreshToken": {},
+            "refresh_token": {}
+          },
+          "schema_title": "RequestBody"
+        },
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "post-api-v1-auth-register",
+        "path": "/api/v1/auth/register",
+        "method": "POST",
+        "summary": "Register New User Account",
+        "description": "Register a new user account and return authenticated session tokens.",
+        "tags": [
+          "Authentication"
+        ],
+        "auth": false,
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "example": {
+            "name": "Aarav Sharma",
+            "email": "traveler@paryatakroute.in",
+            "password": "ParyatakPass123!"
+          },
+          "schema_title": "RequestBody"
+        },
+        "responses": [
+          {
+            "status": "201",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "itineraries": [
+      {
+        "id": "post-api-v1-itineraries-generate",
+        "path": "/api/v1/itineraries/generate",
+        "method": "POST",
+        "summary": "Generate Travel Itinerary with Groq AI (Public & Authenticated)",
+        "description": "Generate a structured personalized travel itinerary using Groq AI. Open to all visitors.",
+        "tags": [
+          "Itineraries"
+        ],
+        "auth": true,
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "example": {
+            "tripId": {},
+            "preferences": {},
+            "regenerate": true
+          },
+          "schema_title": "RequestBody"
+        },
+        "responses": [
+          {
+            "status": "201",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "get-api-v1-itineraries-trip-trip-id",
+        "path": "/api/v1/itineraries/trip/{trip_id}",
+        "method": "GET",
+        "summary": "Get Itinerary By Trip ID",
+        "description": "Get the itinerary associated with a trip.",
+        "tags": [
+          "Itineraries"
+        ],
+        "auth": true,
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "",
+            "default": ""
+          }
+        ],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "get-api-v1-itineraries-itinerary-id",
+        "path": "/api/v1/itineraries/{itinerary_id}",
+        "method": "GET",
+        "summary": "Get Itinerary By ID (Public & Authenticated)",
+        "description": "Get itinerary details by ID without requiring authentication.",
+        "tags": [
+          "Itineraries"
+        ],
+        "auth": true,
+        "parameters": [
+          {
+            "name": "itinerary_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "",
+            "default": ""
+          }
+        ],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "patch-api-v1-itineraries-itinerary-id",
+        "path": "/api/v1/itineraries/{itinerary_id}",
+        "method": "PATCH",
+        "summary": "Patch Itinerary & Recalculate Budget",
+        "description": "Update itinerary days/activities with automatic deterministic budget recalculation.",
+        "tags": [
+          "Itineraries"
+        ],
+        "auth": true,
+        "parameters": [
+          {
+            "name": "itinerary_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "",
+            "default": ""
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "example": {
+            "title": {},
+            "summary": {},
+            "status": {},
+            "days": {}
+          },
+          "schema_title": "RequestBody"
+        },
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "get-api-v1-itineraries-itinerary-id-budget",
+        "path": "/api/v1/itineraries/{itinerary_id}/budget",
+        "method": "GET",
+        "summary": "Get Itinerary Budget Analytics (Public & Authenticated)",
+        "description": "Get comprehensive deterministic budget analytics and category breakdown.",
+        "tags": [
+          "Itineraries"
+        ],
+        "auth": true,
+        "parameters": [
+          {
+            "name": "itinerary_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "",
+            "default": ""
+          }
+        ],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "post-api-v1-itineraries-itinerary-id-claim",
+        "path": "/api/v1/itineraries/{itinerary_id}/claim",
+        "method": "POST",
+        "summary": "Claim/Save Guest Itinerary into User Account",
+        "description": "Associate a guest itinerary with the authenticated user and create an owned trip.",
+        "tags": [
+          "Itineraries"
+        ],
+        "auth": true,
+        "parameters": [
+          {
+            "name": "itinerary_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "",
+            "default": ""
+          }
+        ],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "post-api-v1-itineraries-itinerary-id-days-day-number-regenerate",
+        "path": "/api/v1/itineraries/{itinerary_id}/days/{day_number}/regenerate",
+        "method": "POST",
+        "summary": "Surgically Regenerate Single Day Plan (Public & Authenticated)",
+        "description": "Surgically regenerate a single day's plan via Groq AI without modifying other days.",
+        "tags": [
+          "Itineraries"
+        ],
+        "auth": true,
+        "parameters": [
+          {
+            "name": "itinerary_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "",
+            "default": ""
+          },
+          {
+            "name": "day_number",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "",
+            "default": ""
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "example": {},
+          "schema_title": "Request"
+        },
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "get-api-v1-itineraries-itinerary-id-export-pdf",
+        "path": "/api/v1/itineraries/{itinerary_id}/export/pdf",
+        "method": "GET",
+        "summary": "Export Itinerary as PDF Document (Public & Authenticated)",
+        "description": "Generate and download a high quality PDF export of the itinerary.",
+        "tags": [
+          "Itineraries"
+        ],
+        "auth": true,
+        "parameters": [
+          {
+            "name": "itinerary_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "",
+            "default": ""
+          }
+        ],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {}
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "trips": [
+      {
+        "id": "get-api-v1-trips",
+        "path": "/api/v1/trips",
+        "method": "GET",
+        "summary": "List Authenticated User Trips",
+        "description": "List paginated trips owned by the authenticated user.",
+        "tags": [
+          "Trips"
+        ],
+        "auth": true,
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "description": "Page number",
+            "default": 1
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "description": "Items per page",
+            "default": 20
+          }
+        ],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "post-api-v1-trips",
+        "path": "/api/v1/trips",
+        "method": "POST",
+        "summary": "Create New Trip",
+        "description": "Create a new trip (supports both registered users and guest visitors).",
+        "tags": [
+          "Trips"
+        ],
+        "auth": true,
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "example": {
+            "destination": "Jaipur, Rajasthan",
+            "starting_city": {},
+            "start_date": "2026-11-15",
+            "end_date": "2026-11-15",
+            "budget": 1,
+            "currency": "INR",
+            "travelers_count": 1,
+            "travel_style": "travel style",
+            "interests": [
+              "sample_string"
+            ],
+            "transport_preference": {},
+            "accommodation_preference": {},
+            "dietary_preferences": {},
+            "accessibility_preferences": {},
+            "additional_notes": {},
+            "status": "draft"
+          },
+          "schema_title": "RequestBody"
+        },
+        "responses": [
+          {
+            "status": "201",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "delete-api-v1-trips-trip-id",
+        "path": "/api/v1/trips/{trip_id}",
+        "method": "DELETE",
+        "summary": "Delete Trip",
+        "description": "Delete trip and cascaded itineraries with ownership check.",
+        "tags": [
+          "Trips"
+        ],
+        "auth": true,
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "",
+            "default": ""
+          }
+        ],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "get-api-v1-trips-trip-id",
+        "path": "/api/v1/trips/{trip_id}",
+        "method": "GET",
+        "summary": "Get Trip By ID",
+        "description": "Get trip details by ID with ownership check.",
+        "tags": [
+          "Trips"
+        ],
+        "auth": true,
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "",
+            "default": ""
+          }
+        ],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "put-api-v1-trips-trip-id",
+        "path": "/api/v1/trips/{trip_id}",
+        "method": "PUT",
+        "summary": "Update Trip Details",
+        "description": "Update trip details by ID with ownership check.",
+        "tags": [
+          "Trips"
+        ],
+        "auth": true,
+        "parameters": [
+          {
+            "name": "trip_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "",
+            "default": ""
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "example": {
+            "destination": {},
+            "starting_city": {},
+            "start_date": {},
+            "end_date": {},
+            "budget": {},
+            "currency": {},
+            "travellers": {},
+            "travel_style": {},
+            "interests": {},
+            "transport_preference": {},
+            "accommodation_preference": {},
+            "dietary_preferences": {},
+            "accessibility_preferences": {},
+            "additional_notes": {},
+            "status": {}
+          },
+          "schema_title": "RequestBody"
+        },
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "explore": [
+      {
+        "id": "get-api-v1-currency-convert",
+        "path": "/api/v1/currency/convert",
+        "method": "GET",
+        "summary": "Convert Currency Amount",
+        "description": "Convert an amount from one currency to another.",
+        "tags": [
+          "Travel Data"
+        ],
+        "auth": false,
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": "From currency code",
+            "default": ""
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": "To currency code",
+            "default": ""
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "required": true,
+            "type": "number",
+            "description": "Amount to convert",
+            "default": ""
+          }
+        ],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "get-api-v1-currency-rates",
+        "path": "/api/v1/currency/rates",
+        "method": "GET",
+        "summary": "Get Currency Exchange Rates",
+        "description": "Get latest exchange rates for supported currencies.",
+        "tags": [
+          "Travel Data"
+        ],
+        "auth": false,
+        "parameters": [
+          {
+            "name": "base",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "description": "Base 3-letter currency code",
+            "default": "USD"
+          }
+        ],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "get-api-v1-destinations",
+        "path": "/api/v1/destinations",
+        "method": "GET",
+        "summary": "Search Destinations via Nominatim",
+        "description": "Search for destinations using OpenStreetMap Nominatim geocoding.",
+        "tags": [
+          "Travel Data"
+        ],
+        "auth": false,
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": "Place or city name to search",
+            "default": ""
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "description": "Max results",
+            "default": 5
+          }
+        ],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "post-api-v1-directions",
+        "path": "/api/v1/directions",
+        "method": "POST",
+        "summary": "Calculate Driving Route via OSRM",
+        "description": "Calculate driving route between two points using OSRM routing.",
+        "tags": [
+          "Travel Data"
+        ],
+        "auth": false,
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "example": {
+            "coordinates": {},
+            "start": {},
+            "destination": {},
+            "mode": {}
+          },
+          "schema_title": "RequestBody"
+        },
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "get-api-v1-weather",
+        "path": "/api/v1/weather",
+        "method": "GET",
+        "summary": "Get Weather Forecast via Open-Meteo",
+        "description": "Get weather conditions and 7-day forecast using Open-Meteo.",
+        "tags": [
+          "Travel Data"
+        ],
+        "auth": false,
+        "parameters": [
+          {
+            "name": "lat",
+            "in": "query",
+            "required": true,
+            "type": "number",
+            "description": "Latitude",
+            "default": ""
+          },
+          {
+            "name": "lon",
+            "in": "query",
+            "required": true,
+            "type": "number",
+            "description": "Longitude",
+            "default": ""
+          }
+        ],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "chat": [
+      {
+        "id": "post-api-v1-chat",
+        "path": "/api/v1/chat",
+        "method": "POST",
+        "summary": "Travel Assistant AI Chat (Public & Authenticated)",
+        "description": "Interact with ParyatakRoute Travel Assistant AI powered by Groq. Accessible to all visitors.",
+        "tags": [
+          "Chat"
+        ],
+        "auth": true,
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "example": {
+            "message": "message",
+            "tripId": {},
+            "itineraryId": {},
+            "history": [
+              {
+                "role": {},
+                "content": {}
+              }
+            ]
+          },
+          "schema_title": "RequestBody"
+        },
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "favourites": [
+      {
+        "id": "get-api-v1-favourites",
+        "path": "/api/v1/favourites",
+        "method": "GET",
+        "summary": "List User Saved Favourites",
+        "description": "List all saved favourites for the authenticated user.",
+        "tags": [
+          "Favourites"
+        ],
+        "auth": true,
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "description": "Page number",
+            "default": 1
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "description": "Items per page",
+            "default": 20
+          }
+        ],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "post-api-v1-favourites",
+        "path": "/api/v1/favourites",
+        "method": "POST",
+        "summary": "Bookmark Destination as Favourite",
+        "description": "Add a new favourite for the authenticated user.",
+        "tags": [
+          "Favourites"
+        ],
+        "auth": true,
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "example": {
+            "place_id": "place id",
+            "name": "Aarav Sharma",
+            "display_name": {},
+            "address": {},
+            "latitude": 1,
+            "longitude": 1,
+            "category": {},
+            "type": {},
+            "photo_url": {},
+            "provider": "provider",
+            "attribution": {},
+            "notes": {}
+          },
+          "schema_title": "RequestBody"
+        },
+        "responses": [
+          {
+            "status": "201",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "delete-api-v1-favourites-favourite-id",
+        "path": "/api/v1/favourites/{favourite_id}",
+        "method": "DELETE",
+        "summary": "Delete Saved Favourite",
+        "description": "Remove a saved favourite with ownership verification.",
+        "tags": [
+          "Favourites"
+        ],
+        "auth": true,
+        "parameters": [
+          {
+            "name": "favourite_id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "",
+            "default": ""
+          }
+        ],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          },
+          {
+            "status": "422",
+            "description": "Validation Error",
+            "example": {
+              "detail": [
+                {
+                  "loc": {},
+                  "msg": {},
+                  "type": {},
+                  "input": {},
+                  "ctx": {}
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "system": [
+      {
+        "id": "get-",
+        "path": "/",
+        "method": "GET",
+        "summary": "Root Index",
+        "description": "Root metadata endpoint identifying the official ParyatakRoute backend.",
+        "tags": [
+          "Root"
+        ],
+        "auth": false,
+        "parameters": [],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {}
+          }
+        ]
+      },
+      {
+        "id": "get-api-v1-health",
+        "path": "/api/v1/health",
+        "method": "GET",
+        "summary": "Liveness Health Check",
+        "description": "Liveness probe reporting that the ParyatakRoute backend server process is operational.",
+        "tags": [
+          "Health",
+          "Health"
+        ],
+        "auth": false,
+        "parameters": [],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          }
+        ]
+      },
+      {
+        "id": "get-api-v1-health-ready",
+        "path": "/api/v1/health/ready",
+        "method": "GET",
+        "summary": "Readiness & Database Probe",
+        "description": "Readiness probe checking server uptime and Supabase PostgreSQL database connectivity.",
+        "tags": [
+          "Health",
+          "Health"
+        ],
+        "auth": false,
+        "parameters": [],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {}
+          }
+        ]
+      },
+      {
+        "id": "get-health",
+        "path": "/health",
+        "method": "GET",
+        "summary": "Liveness Health Check",
+        "description": "Liveness probe reporting that the ParyatakRoute backend server process is operational.",
+        "tags": [
+          "Health",
+          "Health"
+        ],
+        "auth": false,
+        "parameters": [],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {
+              "success": true,
+              "message": {},
+              "data": {},
+              "meta": {}
+            }
+          }
+        ]
+      },
+      {
+        "id": "get-health-ready",
+        "path": "/health/ready",
+        "method": "GET",
+        "summary": "Readiness & Database Probe",
+        "description": "Readiness probe checking server uptime and Supabase PostgreSQL database connectivity.",
+        "tags": [
+          "Health",
+          "Health"
+        ],
+        "auth": false,
+        "parameters": [],
+        "requestBody": null,
+        "responses": [
+          {
+            "status": "200",
+            "description": "Successful Response",
+            "example": {}
+          }
+        ]
+      }
+    ]
+  }
+}

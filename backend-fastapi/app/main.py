@@ -33,7 +33,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 from fastapi import Request, Response
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_oauth2_redirect_html
-from app.core.docs import OPENAPI_DESCRIPTION, OPENAPI_TAGS, PARYATAK_FAVICON_SVG, get_paryatak_swagger_ui_html
+from app.core.docs import (
+    OPENAPI_DESCRIPTION,
+    OPENAPI_TAGS,
+    PARYATAK_FAVICON_SVG,
+    get_paryatak_swagger_ui_html,
+    get_paryatak_docs_html,
+)
 
 app = FastAPI(
     title="ParyatakRoute API",
@@ -58,7 +64,7 @@ app = FastAPI(
 async def add_documentation_cache_control_headers(request: Request, call_next) -> Response:
     """Ensures documentation routes (/docs, /redoc, /openapi.json) are never cached by browsers or CDN."""
     response = await call_next(request)
-    if request.url.path in ("/docs", "/docs/", "/redoc", "/redoc/", "/openapi.json"):
+    if request.url.path in ("/docs", "/docs/", "/docs/swagger", "/swagger", "/redoc", "/redoc/", "/openapi.json"):
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
@@ -66,8 +72,23 @@ async def add_documentation_cache_control_headers(request: Request, call_next) -
 
 
 @app.get("/docs", include_in_schema=False)
+@app.get("/docs/", include_in_schema=False)
+async def custom_documentation(request: Request) -> HTMLResponse:
+    """Renders the custom branded ParyatakRoute documentation portal."""
+    if request.query_params.get("format") == "swagger":
+        response = get_paryatak_swagger_ui_html()
+    else:
+        response = get_paryatak_docs_html()
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
+@app.get("/docs/swagger", include_in_schema=False)
+@app.get("/swagger", include_in_schema=False)
 async def custom_swagger_ui() -> HTMLResponse:
-    """Renders the custom branded ParyatakRoute Swagger UI documentation."""
+    """Renders the custom branded ParyatakRoute Swagger UI."""
     response = get_paryatak_swagger_ui_html()
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"

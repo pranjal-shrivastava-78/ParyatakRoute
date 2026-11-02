@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParyatakRoute API Documentation — Developer Portal</title>
+    <link rel="icon" type="image/svg+xml" href="{{FAVICON_SVG}}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pr-forest: #183D32;
+            --pr-forest-hover: #112B23;
+            --pr-forest-subtle: #E6EFEA;
+            --pr-terracotta: #D97745;
+            --pr-terracotta-hover: #C26333;
+            --pr-terracotta-subtle: #FBEFE9;
+            --pr-warm-ivory: #F7F5EF;
+            --pr-sand: #E8E4D9;
+            --pr-charcoal: #26332E;
+            --pr-graphite: #53635B;
+            --pr-border: #D8D3C5;
+            --pr-white: #FFFFFF;
+            --pr-success: #1E6B4A;
+            --pr-success-bg: #E8F4EE;
+            --pr-danger: #B9382C;
+            --pr-danger-bg: #FCEBEA;
+            --pr-radius-card: 14px;
+            --pr-radius-pill: 9999px;
+            --pr-shadow-sm: 0 1px 3px rgba(24, 61, 50, 0.05);
+            --pr-shadow-md: 0 4px 14px rgba(24, 61, 50, 0.08);
+            --pr-sidebar-width: 300px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--pr-warm-ivory);
+            color: var(--pr-charcoal);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 7px; height: 7px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(24, 61, 50, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(24, 61, 50, 0.4); }
+
+        /* Top Navigation Bar */
+        .top-navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--pr-forest);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 0 24px;
+            height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 14px rgba(24, 61, 50, 0.15);
+        }
+
+        .brand-lockup {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .brand-emblem {
+            width: 38px;
+            height: 38px;
+            background: #112B23;
+            border: 1.5px solid var(--pr-terracotta);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+            flex-shrink: 0;
+        }
+
+        .brand-emblem svg {
+            width: 22px;
+            height: 22px;
+            fill: var(--pr-terracotta);
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .brand-name {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #FFFFFF;
+            letter-spacing: -0.025em;
+        }
+
+        .brand-name span {
+            color: var(--pr-terracotta);
+        }
+
+        .brand-tagline {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.75);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .top-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .nav-link:hover {
+            color: #FFFFFF;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .top-nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .health-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(30, 107, 74, 0.35);
+            border: 1px solid rgba(145, 165, 139, 0.4);
+            color: #A3E6CD;
+            padding: 4px 10px;
+            border-radius: var(--pr-radius-pill);
+            font-size: 0.75rem;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .health-dot {
+            width: 7px;
+            height: 7px;
+            background: #10B981;
+            border-radius: 50%;
+            box-shadow: 0 0 6px #10B981;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
+        }
+
+        .btn-swagger {
+            background: rgba(255, 255, 255, 0.1);
+            color: #FFFFFF;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 7px 14px;
+            border-radius: var(--pr-radius-pill);
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-swagger:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-visit-main {
+            background: var(--pr-terracotta);
+            color: #FFFFFF;
+            border: none;
+            padding: 8px 18px;
+            border-radius: var(--pr-radius-pill);
+            font-size: 0.84rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 8px rgba(217, 119, 69, 0.35);
+            transition: all 0.15s ease;
+        }
+
+        .btn-visit-main:hover {
+            background: var(--pr-terracotta-hover);
+            transform: translateY(-1px);
+        }
+
+        .hamburger-btn {
+            display: none;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #FFFFFF;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        /* Layout Grid */
+        .portal-layout {
+            display: flex;
+            min-height: calc(100vh - 68px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--pr-sidebar-width);
+            background: var(--pr-warm-ivory);
+            border-right: 1px solid var(--pr-border);
+            padding: 20px 16px;
+            height: calc(100vh - 68px);
+            position: sticky;
+            top: 68px;
+            overflow-y: auto;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .sidebar-search {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            background: var(--pr-white);
+            border: 1px solid var(--pr-border);
+            border-radius: 8px;
+            padding: 9px 36px 9px 12px;
+            font-size: 0.84rem;
+            color: var(--pr-charcoal);
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--pr-forest);
+            box-shadow: 0 0 0 2px var(--pr-forest-subtle);
+        }
+
+        .search-shortcut {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.7rem;
+            background: var(--pr-sand);
+            border: 1px solid var(--pr-border);
+            border-radius: 4px;
+            padding: 1px 6px;
+            color: var(--pr-graphite);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .sidebar-nav-group {
+            margin-bottom: 12px;
+        }
+
+        .sidebar-group-header {
+            font-size: 0.74rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--pr-forest);
+            padding: 6px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-group-count {
+            font-size: 0.7rem;
+            background: var(--pr-sand);
+            padding: 1px 6px;
+            border-radius: 10px;
+            color: var(--pr-graphite);
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 8px;
+            color: var(--pr-graphite);
+            text-decoration: none;
+            font-size: 0.83rem;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-link:hover {
+            background: var(--pr-sand);
+            color: var(--pr-forest);
+        }
+
+        .sidebar-link.active {
+            background: var(--pr-forest-subtle);
+            color: var(--pr-forest);
+            font-weight: 600;
+        }
+
+        /* Method Badge Small */
+        .method-pill {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 5px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-family: 'JetBrains Mono', monospace;
+            flex-shrink: 0;
+            width: 44px;
+            text-align: center;
+        }
+
+        .method-pill.get { background: #E8F4EE; color: #1E6B4A; border: 1px solid #C6E2D4; }
+        .method-pill.post { background: #E6EFEA; color: #183D32; border: 1px solid #BDD7CB; }
+        .method-pill.put, .method-pill.patch { background: #FBEFE9; color: #D97745; border: 1px solid #F4D4C4; }
+        .method-pill.delete { background: #FCEBEA; color: #B9382C; border: 1px solid #F6CDC9; }
+
+        /* Main Content Container */
+        .content-area {
+            flex: 1;
+            padding: 36px clamp(16px, 4vw, 48px);
+            max-width: 1120px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Hero Banner */
+        .hero-banner {
+            background: linear-gradient(135deg, #183D32 0%, #112B23 100%);
+            border-radius: 20px;
+            padding: clamp(28px, 5vw, 48px);
+            color: #FFFFFF;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(24, 61, 50, 0.12);
+            margin-bottom: 40px;
+        }
+
+        .hero-banner::after {
+            content: '';
+            position: absolute;
+            right: -60px;
+            bottom: -60px;
+            width: 240px;
+            height: 240px;
+            background: radial-gradient(circle, rgba(217, 119, 69, 0.25) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hero-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: clamp(2rem, 3.8vw, 2.75rem);
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 14px;
+        }
+
+        .hero-title span {
+            color: var(--pr-terracotta);
+            font-style: italic;
+        }
+
+        .hero-desc {
+            font-size: 1.05rem;
+            color: rgba(255, 255, 255, 0.88);
+            max-width: 720px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .hero-btn-primary {
+            background: var(--pr-terracotta);
+            color: #FFFFFF;
+            padding: 10px 22px;
+            border-radius: var(--pr-radius-pill);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.92rem;
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 12px rgba(217, 119, 69, 0.4);
+        }
+
+        .hero-btn-primary:hover {
+            background: var(--pr-terracotta-hover);
+            transform: translateY(-1px);
+        }
+
+        .hero-btn-secondary {
+            background: rgba(255, 255, 255, 0.12);
+            color: #FFFFFF;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 10px 20px;
+            border-radius: var(--pr-radius-pill);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.92rem;
+            transition: all 0.15s ease;
+        }
+
+        .hero-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Info Cards Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .info-card {
+            background: var(--pr-white);
+            border: 1px solid var(--pr-border);
+            border-radius: var(--pr-radius-card);
+            padding: 18px;
+            box-shadow: var(--pr-shadow-sm);
+        }
+
+        .info-card-label {
+            font-size: 0.74rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--pr-graphite);
+            margin-bottom: 6px;
+        }
+
+        .info-card-val {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--pr-forest);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-card-sub {
+            font-size: 0.8rem;
+            color: var(--pr-graphite);
+            margin-top: 4px;
+        }
+
+        /* Section Block */
+        .doc-section {
+            margin-bottom: 56px;
+            scroll-margin-top: 90px;
+        }
+
+        .section-header {
+            border-bottom: 1px solid var(--pr-border);
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--pr-forest);
+        }
+
+        .section-desc {
+            font-size: 0.95rem;
+            color: var(--pr-graphite);
+            margin-top: 6px;
+        }
+
+        /* Code Tabs */
+        .code-box {
+            background: #112B23;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            margin: 18px 0;
+            box-shadow: var(--pr-shadow-md);
+        }
+
+        .code-box-header {
+            background: #0D201A;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .code-tabs {
+            display: flex;
+            gap: 6px;
+        }
+
+        .code-tab-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .code-tab-btn.active {
+            background: rgba(255, 255, 255, 0.12);
+            color: #FFFFFF;
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #FFFFFF;
+            font-size: 0.74rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.15s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.16);
+        }
+
+        .code-pre {
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.84rem;
+            color: #E6EFEA;
+            overflow-x: auto;
+            line-height: 1.6;
+        }
+
+        /* Endpoint Card */
+        .endpoint-card {
+            background: var(--pr-white);
+            border: 1px solid var(--pr-border);
+            border-radius: var(--pr-radius-card);
+            margin-bottom: 20px;
+            box-shadow: var(--pr-shadow-sm);
+            overflow: hidden;
+            scroll-margin-top: 86px;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .endpoint-card:hover {
+            border-color: #BDD7CB;
+            box-shadow: var(--pr-shadow-md);
+        }
+
+        .endpoint-card-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            cursor: pointer;
+            user-select: none;
+            background: #FAFAF7;
+            border-bottom: 1px solid transparent;
+        }
+
+        .endpoint-card.open .endpoint-card-header {
+            border-bottom-color: var(--pr-border);
+        }
+
+        .endpoint-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .method-badge-lg {
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+        }
+
+        .method-badge-lg.get { background: #E8F4EE; color: #1E6B4A; border: 1.5px solid #C6E2D4; }
+        .method-badge-lg.post { background: #E6EFEA; color: #183D32; border: 1.5px solid #BDD7CB; }
+        .method-badge-lg.put, .method-badge-lg.patch { background: #FBEFE9; color: #D97745; border: 1.5px solid #F4D4C4; }
+        .method-badge-lg.delete { background: #FCEBEA; color: #B9382C; border: 1.5px solid #F6CDC9; }
+
+        .endpoint-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--pr-charcoal);
+        }
+
+        .endpoint-summary {
+            font-size: 0.86rem;
+            color: var(--pr-graphite);
+            font-weight: 500;
+            margin-left: 8px;
+        }
+
+        .endpoint-header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .auth-badge {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .auth-badge.locked {
+            background: #FBEFE9;
+            color: #D97745;
+            border: 1px solid #F4D4C4;
+        }
+
+        .auth-badge.public {
+            background: #E8F4EE;
+            color: #1E6B4A;
+            border: 1px solid #C6E2D4;
+        }
+
+        .chevron-icon {
+            width: 18px;
+            height: 18px;
+            color: var(--pr-graphite);
+            transition: transform 0.2s ease;
+        }
+
+        .endpoint-card.open .chevron-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Endpoint Card Body */
+        .endpoint-card-body {
+            display: none;
+            padding: 24px 20px;
+        }
+
+        .endpoint-card.open .endpoint-card-body {
+            display: block;
+        }
+
+        .endpoint-description {
+            font-size: 0.92rem;
+            color: var(--pr-graphite);
+            line-height: 1.55;
+            margin-bottom: 20px;
+        }
+
+        /* Table styles */
+        .params-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+        }
+
+        .params-table th {
+            text-align: left;
+            padding: 8px 12px;
+            background: var(--pr-sand);
+            color: var(--pr-forest);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-top: 1px solid var(--pr-border);
+            border-bottom: 1px solid var(--pr-border);
+        }
+
+        .params-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--pr-border);
+            color: var(--pr-charcoal);
+            vertical-align: top;
+        }
+
+        .param-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--pr-forest);
+        }
+
+        .param-type {
+            font-size: 0.76rem;
+            color: var(--pr-graphite);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge-required {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--pr-danger);
+            background: var(--pr-danger-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+        }
+
+        .badge-optional {
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--pr-graphite);
+            background: var(--pr-sand);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+        }
+
+        /* Interactive API Explorer */
+        .api-explorer-box {
+            background: #FAFAF7;
+            border: 1.5px solid var(--pr-border);
+            border-radius: 12px;
+            padding: 18px;
+            margin-top: 24px;
+        }
+
+        .explorer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .explorer-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--pr-forest);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .explorer-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-autofill-token {
+            background: var(--pr-forest-subtle);
+            color: var(--pr-forest);
+            border: 1px solid #BDD7CB;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-autofill-token:hover {
+            background: #D4E7DC;
+        }
+
+        .explorer-form {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--pr-charcoal);
+        }
+
+        .form-input {
+            background: var(--pr-white);
+            border: 1px solid var(--pr-border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--pr-charcoal);
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--pr-forest);
+        }
+
+        .form-textarea {
+            background: var(--pr-white);
+            border: 1px solid var(--pr-border);
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 0.82rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--pr-charcoal);
+            min-height: 120px;
+            resize: vertical;
+            outline: none;
+        }
+
+        .form-textarea:focus {
+            border-color: var(--pr-forest);
+        }
+
+        .btn-execute {
+            background: var(--pr-forest);
+            color: #FFFFFF;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.15s ease;
+            width: fit-content;
+        }
+
+        .btn-execute:hover {
+            background: var(--pr-forest-hover);
+        }
+
+        .btn-execute:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .explorer-response {
+            display: none;
+            margin-top: 16px;
+            border-top: 1px solid var(--pr-border);
+            padding-top: 14px;
+        }
+
+        .response-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .response-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        .status-badge.s2xx { background: #E8F4EE; color: #1E6B4A; }
+        .status-badge.s4xx, .status-badge.s5xx { background: #FCEBEA; color: #B9382C; }
+
+        /* Error Codes Table */
+        .error-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .error-card {
+            background: var(--pr-white);
+            border: 1px solid var(--pr-border);
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .error-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--pr-danger);
+            margin-bottom: 4px;
+        }
+
+        .error-desc {
+            font-size: 0.82rem;
+            color: var(--pr-graphite);
+            line-height: 1.4;
+        }
+
+        /* Footer */
+        .portal-footer {
+            background: var(--pr-forest);
+            color: #FFFFFF;
+            padding: 40px 24px;
+            margin-top: 60px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-content {
+            max-width: 1120px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .footer-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 0.85rem;
+        }
+
+        .footer-link {
+            color: rgba(255, 255, 255, 0.75);
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        .footer-link:hover {
+            color: #FFFFFF;
+        }
+
+        /* Responsive */
+        @media (max-width: 960px) {
+            .top-nav-links { display: none; }
+            .hamburger-btn { display: flex; }
+            .portal-layout { flex-direction: column; }
+            .sidebar {
+                position: fixed;
+                left: -100%;
+                top: 68px;
+                height: calc(100vh - 68px);
+                z-index: 999;
+                background: var(--pr-warm-ivory);
+                transition: left 0.25s ease;
+                box-shadow: 4px 0 16px rgba(0, 0, 0, 0.15);
+            }
+            .sidebar.mobile-open {
+                left: 0;
+            }
+            .sidebar-backdrop {
+                display: none;
+                position: fixed;
+                inset: 68px 0 0 0;
+                background: rgba(0, 0, 0, 0.4);
+                z-index: 998;
+            }
+            .sidebar-backdrop.active {
+                display: block;
+            }
+            .content-area {
+                padding: 24px 16px;
+            }
+            .footer-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="top-navbar">
+        <a href="#overview" class="brand-lockup">
+            <div class="brand-emblem">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
+                </svg>
+            </div>
+            <div class="brand-text">
+                <span class="brand-name">Paryatak<span>Route</span></span>
+                <span class="brand-tagline">Your Journey, Intelligently Planned.</span>
+            </div>
+        </a>
+
+        <nav class="top-nav-links">
+            <a href="#overview" class="nav-link">Overview</a>
+            <a href="#quick-start" class="nav-link">Quick Start</a>
+            <a href="#sec-authentication" class="nav-link">Authentication</a>
+            <a href="#sec-itineraries" class="nav-link">API Reference</a>
+            <a href="#guides" class="nav-link">Architecture</a>
+        </nav>
+
+        <div class="top-nav-actions">
+            <div class="health-badge" id="live-health-pill">
+                <span class="health-dot"></span>
+                <span id="health-label">API v1.0.0</span>
+            </div>
+            <a href="/docs/swagger" class="btn-swagger" title="Open Interactive Swagger UI">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <span>Swagger</span>
+            </a>
+            <a href="https://paryatakroute.vercel.app" target="_blank" rel="noopener noreferrer" class="btn-visit-main">
+                <span>Visit ParyatakRoute</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </a>
+            <button class="hamburger-btn" id="mobile-menu-toggle" aria-label="Toggle Navigation Drawer">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+        </div>
+    </header>
+
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <div class="portal-layout">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-search">
+                <input type="text" id="search-input" class="search-input" placeholder="Search API endpoints...">
+                <span class="search-shortcut">/</span>
+            </div>
+
+            <div id="sidebar-nav-container">
+                <!-- Getting Started Group -->
+                <div class="sidebar-nav-group">
+                    <div class="sidebar-group-header">
+                        <span>Getting Started</span>
+                    </div>
+                    <a href="#overview" class="sidebar-link">
+                        <span>Overview</span>
+                    </a>
+                    <a href="#base-url" class="sidebar-link">
+                        <span>Base URL & Environments</span>
+                    </a>
+                    <a href="#quick-start" class="sidebar-link">
+                        <span>Quick Start</span>
+                    </a>
+                    <a href="#sec-authentication" class="sidebar-link">
+                        <span>Authentication Guide</span>
+                    </a>
+                    <a href="#guides" class="sidebar-link">
+                        <span>API Architecture</span>
+                    </a>
+                    <a href="#error-codes" class="sidebar-link">
+                        <span>Error Responses</span>
+                    </a>
+                </div>
+
+                <!-- Dynamic Category Groups -->
+                <div id="dynamic-sidebar-groups"></div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="content-area">
+            <!-- Hero Banner -->
+            <section class="hero-banner" id="overview">
+                <h1 class="hero-title">Powering <span>Smarter</span> Travel Experiences</h1>
+                <p class="hero-desc">
+                    Explore the ParyatakRoute REST API and build intelligent travel applications with AI-driven itinerary generation, deterministic budget breakdowns, destination discovery, and personalized travel planning.
+                </p>
+                <div class="hero-buttons">
+                    <a href="#sec-itineraries" class="hero-btn-primary">Explore API Reference</a>
+                    <a href="https://paryatakroute.vercel.app" target="_blank" rel="noopener noreferrer" class="hero-btn-secondary">Visit ParyatakRoute</a>
+                    <a href="/docs/swagger" class="hero-btn-secondary">Open Swagger UI</a>
+                </div>
+            </section>
+
+            <!-- API Information Cards -->
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-card-label">API Platform</div>
+                    <div class="info-card-val">ParyatakRoute</div>
+                    <div class="info-card-sub">RESTful v1.0.0 Architecture</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-label">Backend Framework</div>
+                    <div class="info-card-val">FastAPI (Python)</div>
+                    <div class="info-card-sub">High-Performance Asynchronous</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-label">Database Storage</div>
+                    <div class="info-card-val">Supabase PostgreSQL</div>
+                    <div class="info-card-sub">Row Level Security (RLS)</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-label">AI Integration</div>
+                    <div class="info-card-val">Groq LLM</div>
+                    <div class="info-card-sub">llama-3.3-70b-versatile</div>
+                </div>
+            </div>
+
+            <!-- Base URL & Environments Section -->
+            <section class="doc-section" id="base-url">
+                <div class="section-header">
+                    <h2 class="section-title">Base URL & Environments</h2>
+                </div>
+                <p style="color: var(--pr-graphite); margin-bottom: 16px;">
+                    All API requests must be served over HTTPS. The following base URLs are configured for ParyatakRoute:
+                </p>
+                <div class="code-box">
+                    <div class="code-box-header">
+                        <span style="font-size: 0.78rem; color: rgba(255, 255, 255, 0.7); font-family: 'JetBrains Mono', monospace;">Production & Development Base URLs</span>
+                        <button class="copy-btn" onclick="copySnippet('https://paryatakrouteapi.itspranjal.in/api/v1')">Copy</button>
+                    </div>
+                    <pre class="code-pre"># Production Endpoint (Authoritative)
+https://paryatakrouteapi.itspranjal.in/api/v1
+
+# Local Development Endpoint
+http://localhost:8000/api/v1</pre>
+                </div>
+            </section>
+
+            <!-- Quick Start Guide -->
+            <section class="doc-section" id="quick-start">
+                <div class="section-header">
+                    <h2 class="section-title">Quick Start</h2>
+                </div>
+                <p style="color: var(--pr-graphite); margin-bottom: 16px;">
+                    Make your first request to verify connectivity using the public destination search or health probe:
+                </p>
+                <div class="code-box">
+                    <div class="code-box-header">
+                        <div class="code-tabs">
+                            <button class="code-tab-btn active" onclick="switchQuickTab('curl')">cURL</button>
+                            <button class="code-tab-btn" onclick="switchQuickTab('js')">JavaScript (fetch)</button>
+                            <button class="code-tab-btn" onclick="switchQuickTab('py')">Python (requests)</button>
+                        </div>
+                        <button class="copy-btn" id="quick-start-copy-btn" onclick="copyQuickSnippet()">Copy Snippet</button>
+                    </div>
+                    <pre class="code-pre" id="quick-start-code">curl -X GET "https://paryatakrouteapi.itspranjal.in/api/v1/destinations?query=Jaipur&limit=5" \
+  -H "Accept: application/json"</pre>
+                </div>
+            </section>
+
+            <!-- Authentication Guide Section -->
+            <section class="doc-section" id="sec-auth-overview">
+                <div class="section-header">
+                    <h2 class="section-title">Authentication Overview</h2>
+                </div>
+                <p style="color: var(--pr-graphite); margin-bottom: 16px; line-height: 1.6;">
+                    ParyatakRoute uses <strong>Supabase JWT Bearer Tokens</strong> for session authentication. Protected endpoints require the standard <code>Authorization</code> header:
+                </p>
+                <div class="code-box" style="margin-bottom: 20px;">
+                    <div class="code-box-header">
+                        <span style="font-size: 0.78rem; color: rgba(255, 255, 255, 0.7); font-family: 'JetBrains Mono', monospace;">Authorization Header Format</span>
+                        <button class="copy-btn" onclick="copySnippet('Authorization: Bearer <your_access_token>')">Copy</button>
+                    </div>
+                    <pre class="code-pre">Authorization: Bearer &lt;your_access_token&gt;</pre>
+                </div>
+                <div style="background: var(--pr-white); border: 1.5px solid #BDD7CB; border-radius: var(--pr-radius-card); padding: 18px; margin-bottom: 24px;">
+                    <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--pr-forest); margin-bottom: 6px;">⚡ Quick Testing with Demo Account</h4>
+                    <p style="font-size: 0.86rem; color: var(--pr-graphite); line-height: 1.5; margin-bottom: 12px;">
+                        You can immediately test authenticated routes using the configured demo account (<code>demo@paryatakroute.in</code> / <code>Demo@12345</code>), or click the <strong>⚡ Autofill Demo Token</strong> button inside any endpoint card below to obtain a bearer token in 1 click!
+                    </p>
+                </div>
+            </section>
+
+            <!-- API Reference Container (Populated dynamically from DOCS_DATA) -->
+            <div id="api-reference-container"></div>
+
+            <!-- Architecture & Guides Section -->
+            <section class="doc-section" id="guides">
+                <div class="section-header">
+                    <h2 class="section-title">API Architecture & Capabilities</h2>
+                </div>
+                <div style="background: var(--pr-white); border: 1px solid var(--pr-border); border-radius: var(--pr-radius-card); padding: 24px; box-shadow: var(--pr-shadow-sm);">
+                    <ul style="color: var(--pr-charcoal); line-height: 1.8; padding-left: 20px;">
+                        <li><strong>AI-Powered Itinerary Generation:</strong> Dynamic day-by-day scheduling powered by Groq LLM (<code>llama-3.3-70b-versatile</code>) with multi-day chunking and fallback deterministic structuring.</li>
+                        <li><strong>Surgical Day Regeneration:</strong> Re-plan a specific day in an existing itinerary without altering preceding or subsequent days.</li>
+                        <li><strong>Deterministic Budget Engine:</strong> Real-time categorization into Accommodation, Transport, Food, Activities, and Miscellaneous.</li>
+                        <li><strong>Geospatial Routing:</strong> Real-time driving distance, geometry, and duration calculated via Project OSRM.</li>
+                        <li><strong>Live Meteorological Forecasts:</strong> 7-day weather predictions with precipitation probabilities via Open-Meteo.</li>
+                        <li><strong>ReportLab PDF Export:</strong> Server-side high-resolution printable PDF generation.</li>
+                        <li><strong>Tenant Isolation:</strong> Broken Object Level Authorization (BOLA) protection with Supabase Row Level Security (RLS).</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Error Responses Section -->
+            <section class="doc-section" id="error-codes">
+                <div class="section-header">
+                    <h2 class="section-title">Standard Error Responses</h2>
+                </div>
+                <p style="color: var(--pr-graphite); margin-bottom: 16px;">
+                    ParyatakRoute returns a unified JSON error envelope across all endpoints:
+                </p>
+                <div class="code-box">
+                    <div class="code-box-header">
+                        <span style="font-size: 0.78rem; color: rgba(255, 255, 255, 0.7); font-family: 'JetBrains Mono', monospace;">Error Response Envelope</span>
+                        <button class="copy-btn" onclick="copySnippet('{\n  &quot;success&quot;: false,\n  &quot;error&quot;: {\n    &quot;code&quot;: &quot;UNAUTHORIZED&quot;,\n    &quot;message&quot;: &quot;Authentication token is missing or invalid&quot;,\n    &quot;details&quot;: null\n  }\n}')">Copy</button>
+                    </div>
+                    <pre class="code-pre">{
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Authentication token is missing or invalid",
+    "details": null
+  }
+}</pre>
+                </div>
+                <div class="error-grid">
+                    <div class="error-card">
+                        <div class="error-code">400 BAD_REQUEST</div>
+                        <div class="error-desc">Malformed request syntax, invalid parameters, or date constraint violations.</div>
+                    </div>
+                    <div class="error-card">
+                        <div class="error-code">401 UNAUTHORIZED</div>
+                        <div class="error-desc">Missing, expired, or malformed JWT Bearer authentication token.</div>
+                    </div>
+                    <div class="error-card">
+                        <div class="error-code">403 FORBIDDEN / BOLA_VIOLATION</div>
+                        <div class="error-desc">Attempted access to trip or itinerary belonging to another tenant user.</div>
+                    </div>
+                    <div class="error-card">
+                        <div class="error-code">404 NOT_FOUND</div>
+                        <div class="error-desc">Requested trip ID, itinerary ID, or user profile could not be located.</div>
+                    </div>
+                    <div class="error-card">
+                        <div class="error-code">409 CONFLICT</div>
+                        <div class="error-desc">Duplicate registration email or destination already bookmarked in favourites.</div>
+                    </div>
+                    <div class="error-card">
+                        <div class="error-code">422 VALIDATION_ERROR</div>
+                        <div class="error-desc">Pydantic schema validation failure on request payload or query parameters.</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="portal-footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="brand-emblem" style="width:32px; height:32px;">
+                    <svg viewBox="0 0 24 24" style="width:18px; height:18px;"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
+                </div>
+                <span style="font-weight:700; font-size:1rem;">ParyatakRoute Developer Portal</span>
+                <span style="color:rgba(255,255,255,0.5);">•</span>
+                <span style="font-size:0.82rem; color:rgba(255,255,255,0.7);">Your Journey, Intelligently Planned.</span>
+            </div>
+            <div class="footer-links">
+                <a href="https://paryatakroute.vercel.app" target="_blank" rel="noopener noreferrer" class="footer-link">Main Website</a>
+                <a href="/openapi.json" target="_blank" class="footer-link">OpenAPI JSON</a>
+                <a href="/docs/swagger" class="footer-link">Swagger UI</a>
+                <a href="/redoc" target="_blank" class="footer-link">ReDoc</a>
+                <a href="https://github.com/pranjal-shrivastava-78/ParyatakRoute" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const docsData = {{DOCS_DATA_JSON}};
+        let currentQuickTab = 'curl';
+        const demoEmail = "demo@paryatakroute.in";
+        const demoPass = "Demo@12345";
+
+        const snippets = {
+            curl: `curl -X GET "https://paryatakrouteapi.itspranjal.in/api/v1/destinations?query=Jaipur&limit=5" \\
+  -H "Accept: application/json"`,
+            js: `const response = await fetch("https://paryatakrouteapi.itspranjal.in/api/v1/destinations?query=Jaipur&limit=5", {
+  headers: { "Accept": "application/json" }
+});
+const data = await response.json();
+console.log(data);`,
+            py: `import requests
+
+url = "https://paryatakrouteapi.itspranjal.in/api/v1/destinations"
+params = {"query": "Jaipur", "limit": 5}
+response = requests.get(url, params=params)
+print(response.json())`
+        };
+
+        function switchQuickTab(tab) {
+            currentQuickTab = tab;
+            document.querySelectorAll('.code-tabs .code-tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase().includes(tab));
+            });
+            document.getElementById('quick-start-code').textContent = snippets[tab];
+        }
+
+        function copyQuickSnippet() {
+            copySnippet(snippets[currentQuickTab]);
+        }
+
+        function copySnippet(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alertToast('Copied to clipboard!');
+            }).catch(() => {
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                alertToast('Copied to clipboard!');
+            });
+        }
+
+        function alertToast(msg) {
+            let toast = document.getElementById('docs-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'docs-toast';
+                toast.style.cssText = "position:fixed;bottom:24px;right:24px;background:#183D32;color:#FFFFFF;padding:10px 18px;border-radius:9999px;font-size:0.84rem;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:9999;transition:opacity 0.2s ease;";
+                document.body.appendChild(toast);
+            }
+            toast.textContent = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => { toast.style.opacity = '0'; }, 2200);
+        }
+
+        function renderPortal() {
+            const sidebarContainer = document.getElementById('dynamic-sidebar-groups');
+            const referenceContainer = document.getElementById('api-reference-container');
+
+            sidebarContainer.innerHTML = '';
+            referenceContainer.innerHTML = '';
+
+            docsData.categories.forEach(cat => {
+                const eps = docsData.endpoints[cat.id] || [];
+                if (eps.length === 0) return;
+
+                // Sidebar Group
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'sidebar-nav-group';
+                groupDiv.innerHTML = `
+                    <div class="sidebar-group-header">
+                        <span>${cat.title}</span>
+                        <span class="sidebar-group-count">${eps.length}</span>
+                    </div>
+                `;
+
+                eps.forEach(ep => {
+                    const link = document.createElement('a');
+                    link.href = `#${ep.id}`;
+                    link.className = 'sidebar-link';
+                    link.innerHTML = `
+                        <span class="method-pill ${ep.method.toLowerCase()}">${ep.method === 'DELETE' ? 'DEL' : ep.method}</span>
+                        <span title="${ep.path}">${ep.summary || ep.path}</span>
+                    `;
+                    groupDiv.appendChild(link);
+                });
+                sidebarContainer.appendChild(groupDiv);
+
+                // Main Reference Section
+                const section = document.createElement('section');
+                section.className = 'doc-section';
+                section.id = `sec-${cat.id}`;
+                section.innerHTML = `
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title">${cat.title}</h2>
+                            <p class="section-desc">${cat.description || ''}</p>
+                        </div>
+                    </div>
+                `;
+
+                eps.forEach((ep, idx) => {
+                    const card = createEndpointCard(ep, idx === 0);
+                    section.appendChild(card);
+                });
+
+                referenceContainer.appendChild(section);
+            });
+        }
+
+        function createEndpointCard(ep, startOpen) {
+            const card = document.createElement('div');
+            card.className = `endpoint-card ${startOpen ? 'open' : ''}`;
+            card.id = ep.id;
+
+            const methodClass = ep.method.toLowerCase();
+            const authBadge = ep.auth 
+                ? '<span class="auth-badge locked">🔒 Bearer Token</span>'
+                : '<span class="auth-badge public">🌐 Public</span>';
+
+            // Parameters Table
+            let paramsHtml = '';
+            if (ep.parameters && ep.parameters.length > 0) {
+                paramsHtml = `
+                    <h4 style="font-size:0.85rem; font-weight:700; color:var(--pr-forest); margin-bottom:8px;">Request Parameters</h4>
+                    <table class="params-table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Type</th>
+                                <th>In</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${ep.parameters.map(p => `
+                                <tr>
+                                    <td>
+                                        <span class="param-name">${p.name}</span>
+                                        ${p.required ? '<span class="badge-required">required</span>' : '<span class="badge-optional">optional</span>'}
+                                    </td>
+                                    <td><span class="param-type">${p.type}</span></td>
+                                    <td><span class="param-type">${p.in}</span></td>
+                                    <td>${p.description || '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            // Request Body Example
+            let bodyHtml = '';
+            if (ep.requestBody && ep.requestBody.example) {
+                const jsonStr = JSON.stringify(ep.requestBody.example, null, 2);
+                bodyHtml = `
+                    <div style="margin-bottom:18px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <h4 style="font-size:0.85rem; font-weight:700; color:var(--pr-forest);">Request Body (${ep.requestBody.schema_title})</h4>
+                            <button class="copy-btn" onclick="copySnippet(\`${escapeForSnippet(jsonStr)}\`)">Copy Payload</button>
+                        </div>
+                        <div class="code-box" style="margin:0;">
+                            <pre class="code-pre">${jsonStr}</pre>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Success Response
+            let responseHtml = '';
+            const okResp = ep.responses.find(r => r.status.startsWith('2'));
+            if (okResp && okResp.example) {
+                const jsonResp = JSON.stringify(okResp.example, null, 2);
+                responseHtml = `
+                    <div style="margin-bottom:18px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <h4 style="font-size:0.85rem; font-weight:700; color:var(--pr-forest);">Successful Response (${okResp.status} OK)</h4>
+                            <button class="copy-btn" onclick="copySnippet(\`${escapeForSnippet(jsonResp)}\`)">Copy Response</button>
+                        </div>
+                        <div class="code-box" style="margin:0;">
+                            <pre class="code-pre">${jsonResp}</pre>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Explorer Inputs
+            const inputsHtml = ep.parameters.map(p => `
+                <div class="form-row">
+                    <label class="form-label">${p.name} (${p.in}) ${p.required ? '*' : ''}</label>
+                    <input type="text" class="form-input explorer-input" data-in="${p.in}" data-name="${p.name}" value="${p.default || ''}" placeholder="${p.description || p.name}">
+                </div>
+            `).join('');
+
+            const bodyInputHtml = ep.requestBody ? `
+                <div class="form-row">
+                    <label class="form-label">Request Body (JSON)</label>
+                    <textarea class="form-textarea explorer-body">${JSON.stringify(ep.requestBody.example, null, 2)}</textarea>
+                </div>
+            ` : '';
+
+            card.innerHTML = `
+                <div class="endpoint-card-header" onclick="toggleCard('${ep.id}')">
+                    <div class="endpoint-header-left">
+                        <span class="method-badge-lg ${methodClass}">${ep.method}</span>
+                        <span class="endpoint-path">${ep.path}</span>
+                        <span class="endpoint-summary">${ep.summary}</span>
+                    </div>
+                    <div class="endpoint-header-right">
+                        ${authBadge}
+                        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                </div>
+                <div class="endpoint-card-body">
+                    <p class="endpoint-description">${ep.description || ep.summary}</p>
+                    ${paramsHtml}
+                    ${bodyHtml}
+                    ${responseHtml}
+
+                    <!-- Live Interactive API Explorer -->
+                    <div class="api-explorer-box">
+                        <div class="explorer-header">
+                            <span class="explorer-title">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                <span>Interactive API Explorer</span>
+                            </span>
+                            <div class="explorer-actions">
+                                ${ep.auth ? `<button type="button" class="btn-autofill-token" onclick="autofillDemoToken('${ep.id}')">⚡ Autofill Demo Token</button>` : ''}
+                                <button type="button" class="copy-btn" onclick="copyCurl('${ep.id}')">Copy cURL</button>
+                            </div>
+                        </div>
+                        <form class="explorer-form" onsubmit="executeRequest('${ep.id}', event)">
+                            ${ep.auth ? `
+                                <div class="form-row">
+                                    <label class="form-label">Authorization (Bearer Token)</label>
+                                    <input type="text" class="form-input explorer-token" placeholder="Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                                </div>
+                            ` : ''}
+                            ${inputsHtml}
+                            ${bodyInputHtml}
+                            <button type="submit" class="btn-execute">
+                                <span>Send Request</span>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                            </button>
+                        </form>
+                        <div class="explorer-response" id="response-${ep.id}">
+                            <div class="response-header">
+                                <div class="response-meta">
+                                    <span class="status-badge" id="resp-status-${ep.id}">200 OK</span>
+                                    <span id="resp-time-${ep.id}">120 ms</span>
+                                </div>
+                                <button class="copy-btn" onclick="copySnippet(document.getElementById('resp-code-${ep.id}').textContent)">Copy Response</button>
+                            </div>
+                            <div class="code-box" style="margin:0;">
+                                <pre class="code-pre" id="resp-code-${ep.id}"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        function escapeForSnippet(str) {
+            return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+        }
+
+        function toggleCard(cardId) {
+            const card = document.getElementById(cardId);
+            if (card) {
+                card.classList.toggle('open');
+            }
+        }
+
+        async function autofillDemoToken(cardId) {
+            const card = document.getElementById(cardId);
+            const tokenInput = card.querySelector('.explorer-token');
+            if (!tokenInput) return;
+
+            let cachedToken = sessionStorage.getItem('paryatak_demo_token');
+            if (cachedToken) {
+                tokenInput.value = cachedToken;
+                alertToast('Demo Token autofilled from session!');
+                return;
+            }
+
+            try {
+                tokenInput.value = "Acquiring demo token...";
+                const res = await fetch("/api/v1/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: demoEmail, password: demoPass })
+                });
+                const data = await res.json();
+                if (data.success && data.data && data.data.tokens && data.data.tokens.accessToken) {
+                    const token = data.data.tokens.accessToken;
+                    sessionStorage.setItem('paryatak_demo_token', token);
+                    tokenInput.value = token;
+                    alertToast('Demo Token acquired and autofilled!');
+                } else {
+                    tokenInput.value = "";
+                    alertToast('Failed to acquire demo token');
+                }
+            } catch (err) {
+                tokenInput.value = "";
+                alertToast('Error connecting to auth service');
+            }
+        }
+
+        async function executeRequest(cardId, event) {
+            event.preventDefault();
+            const card = document.getElementById(cardId);
+            const ep = findEndpointBySlug(cardId);
+            if (!ep) return;
+
+            const submitBtn = card.querySelector('.btn-execute');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Executing...';
+
+            let resolvedPath = ep.path;
+            const queryParams = new URLSearchParams();
+            const headers = { "Accept": "application/json" };
+
+            // Read path & query params
+            const inputs = card.querySelectorAll('.explorer-input');
+            inputs.forEach(inp => {
+                const pIn = inp.dataset.in;
+                const pName = inp.dataset.name;
+                const val = inp.value.trim();
+                if (!val) return;
+
+                if (pIn === 'path') {
+                    resolvedPath = resolvedPath.replace(`{${pName}}`, encodeURIComponent(val));
+                } else if (pIn === 'query') {
+                    queryParams.append(pName, val);
+                }
+            });
+
+            const queryString = queryParams.toString();
+            const fullUrl = queryString ? `${resolvedPath}?${queryString}` : resolvedPath;
+
+            // Auth Header
+            const tokenInput = card.querySelector('.explorer-token');
+            if (tokenInput && tokenInput.value.trim()) {
+                const raw = tokenInput.value.trim();
+                headers["Authorization"] = raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
+            }
+
+            // Request Body
+            let body = undefined;
+            if (ep.requestBody) {
+                const textarea = card.querySelector('.explorer-body');
+                if (textarea && textarea.value.trim()) {
+                    body = textarea.value.trim();
+                    headers["Content-Type"] = "application/json";
+                }
+            }
+
+            const startTime = performance.now();
+            try {
+                const response = await fetch(fullUrl, {
+                    method: ep.method,
+                    headers: headers,
+                    body: body
+                });
+                const elapsed = Math.round(performance.now() - startTime);
+                let jsonResp;
+                try {
+                    jsonResp = await response.json();
+                } catch {
+                    jsonResp = { detail: await response.text() };
+                }
+
+                renderExplorerResponse(cardId, response.status, elapsed, jsonResp);
+            } catch (err) {
+                const elapsed = Math.round(performance.now() - startTime);
+                renderExplorerResponse(cardId, 0, elapsed, { error: err.message, message: "Network request failed" });
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<span>Send Request</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`;
+            }
+        }
+
+        function renderExplorerResponse(cardId, status, elapsed, data) {
+            const box = document.getElementById(`response-${cardId}`);
+            const statusBadge = document.getElementById(`resp-status-${cardId}`);
+            const timeSpan = document.getElementById(`resp-time-${cardId}`);
+            const codePre = document.getElementById(`resp-code-${cardId}`);
+
+            box.style.display = 'block';
+            statusBadge.textContent = status ? `${status} ${status >= 200 && status < 300 ? 'OK' : 'Error'}` : 'Failed';
+            statusBadge.className = `status-badge ${status >= 200 && status < 300 ? 's2xx' : 's4xx'}`;
+            timeSpan.textContent = `${elapsed} ms`;
+            codePre.textContent = JSON.stringify(data, null, 2);
+        }
+
+        function findEndpointBySlug(slug) {
+            for (const cat in docsData.endpoints) {
+                const match = docsData.endpoints[cat].find(e => e.id === slug);
+                if (match) return match;
+            }
+            return null;
+        }
+
+        function copyCurl(cardId) {
+            const ep = findEndpointBySlug(cardId);
+            if (!ep) return;
+            const card = document.getElementById(cardId);
+            let resolvedPath = ep.path;
+            const queryParams = new URLSearchParams();
+
+            const inputs = card.querySelectorAll('.explorer-input');
+            inputs.forEach(inp => {
+                const pIn = inp.dataset.in;
+                const pName = inp.dataset.name;
+                const val = inp.value.trim();
+                if (!val) return;
+                if (pIn === 'path') resolvedPath = resolvedPath.replace(`{${pName}}`, val);
+                else if (pIn === 'query') queryParams.append(pName, val);
+            });
+
+            const qStr = queryParams.toString();
+            const fullUrl = `https://paryatakrouteapi.itspranjal.in${resolvedPath}${qStr ? '?' + qStr : ''}`;
+
+            let cmd = `curl -X ${ep.method} "${fullUrl}" \\\n  -H "Accept: application/json"`;
+
+            const tokenInput = card.querySelector('.explorer-token');
+            if (tokenInput && tokenInput.value.trim()) {
+                const t = tokenInput.value.trim();
+                cmd += ` \\\n  -H "Authorization: ${t.startsWith('Bearer ') ? t : 'Bearer ' + t}"`;
+            }
+
+            if (ep.requestBody) {
+                const ta = card.querySelector('.explorer-body');
+                if (ta && ta.value.trim()) {
+                    cmd += ` \\\n  -H "Content-Type: application/json" \\\n  -d '${ta.value.trim()}'`;
+                }
+            }
+
+            copySnippet(cmd);
+        }
+
+        // Live Health Ping
+        async function checkLiveHealth() {
+            try {
+                const res = await fetch("/health");
+                if (res.ok) {
+                    document.getElementById('health-label').textContent = "Online • v1.0.0";
+                } else {
+                    document.getElementById('health-label').textContent = "Degraded";
+                }
+            } catch {
+                document.getElementById('health-label').textContent = "Offline";
+            }
+        }
+
+        // Search Filter
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            const links = document.querySelectorAll('.sidebar-link');
+            const cards = document.querySelectorAll('.endpoint-card');
+
+            links.forEach(l => {
+                const text = l.textContent.toLowerCase();
+                l.style.display = (!query || text.includes(query)) ? 'flex' : 'none';
+            });
+
+            cards.forEach(c => {
+                const text = c.textContent.toLowerCase();
+                c.style.display = (!query || text.includes(query)) ? 'block' : 'none';
+            });
+        });
+
+        // Keyboard Shortcut '/' to search
+        window.addEventListener('keydown', (e) => {
+            if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                document.getElementById('search-input').focus();
+            }
+        });
+
+        // Mobile Menu Drawer
+        const toggleBtn = document.getElementById('mobile-menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebar-backdrop');
+
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
+            backdrop.classList.toggle('active');
+        });
+
+        backdrop.addEventListener('click', () => {
+            sidebar.classList.remove('mobile-open');
+            backdrop.classList.remove('active');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.sidebar-link')) {
+                sidebar.classList.remove('mobile-open');
+                backdrop.classList.remove('active');
+            }
+        });
+
+        // Initialize
+        renderPortal();
+        checkLiveHealth();
+    </script>
+</body>
+</html>
+

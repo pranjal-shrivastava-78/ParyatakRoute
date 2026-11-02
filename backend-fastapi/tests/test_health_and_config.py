@@ -64,12 +64,23 @@ def test_settings_secret_masking():
 
 def test_swagger_docs_and_openapi_security(client: TestClient):
     """Verify /docs HTML, /openapi.json schema, HTTPBearer security scheme, and logical tags."""
-    # 1. /docs returns custom branded Swagger UI HTML with no-cache headers
+    # 1. /docs returns custom branded developer portal HTML with no-cache headers
     docs_resp = client.get("/docs")
     assert docs_resp.status_code == 200
     assert "ParyatakRoute" in docs_resp.text
+    assert "Developer Portal" in docs_resp.text
+    assert "Interactive API Explorer" in docs_resp.text
     assert "text/html" in docs_resp.headers.get("content-type", "")
     assert "no-cache" in docs_resp.headers.get("cache-control", "").lower()
+
+    # 1b. /docs/swagger and /docs?format=swagger return Swagger UI
+    swagger_resp = client.get("/docs/swagger")
+    assert swagger_resp.status_code == 200
+    assert "swagger-ui" in swagger_resp.text
+
+    swagger_param_resp = client.get("/docs?format=swagger")
+    assert swagger_param_resp.status_code == 200
+    assert "swagger-ui" in swagger_param_resp.text
 
     # 2. /openapi.json returns valid OpenAPI 3.x schema with no-cache headers
     oa_resp = client.get("/openapi.json")
