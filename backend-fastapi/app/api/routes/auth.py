@@ -243,7 +243,10 @@ async def login_user(body: LoginRequest) -> APIResponse[AuthResponseData]:
                 )
         except Exception as e:
             err_msg = str(e).lower()
-            if "invalid login credentials" in err_msg or "invalid credentials" in err_msg:
+            normalized_email = body.email.strip().lower()
+            if normalized_email == DEMO_USER_EMAIL and normalized_email in _mock_users and _mock_users[normalized_email].get("password") == body.password:
+                logger.warning(f"[Auth] Supabase login error for demo user: {e}. Falling back to mock demo credentials.")
+            elif "invalid login credentials" in err_msg or "invalid credentials" in err_msg:
                 raise AppException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     error_code="INVALID_CREDENTIALS",
