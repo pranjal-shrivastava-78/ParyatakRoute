@@ -213,7 +213,12 @@ export const CreateTripPage: React.FC = () => {
       setGenerationStep('Done! Loading your personalized journey...');
 
       // Navigate directly to the generated Itinerary View
-      navigate(`/itineraries/${itinerary.id}`);
+      const targetId = itinerary?.id || (itinerary as any)?._id;
+      if (targetId) {
+        navigate(`/itineraries/${targetId}`);
+      } else {
+        throw new Error('Itinerary was generated but no valid identifier was returned.');
+      }
     } catch (err: any) {
       clearTimeout(genTimer1);
       clearTimeout(genTimer2);

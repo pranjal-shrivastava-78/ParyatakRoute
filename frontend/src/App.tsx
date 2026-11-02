@@ -16,17 +16,18 @@ import RegisterPage from './pages/RegisterPage';
 import ProfileSettingsPage from './pages/ProfileSettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import './styles/components.css';
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
   // Homepage embeds top navigation directly into the photographic hero frame per DESIGN.md
   const isHome = location.pathname === '/';
-  const isItineraryView = location.pathname.startsWith('/itineraries/');
+  const isItineraryView = location.pathname.startsWith('/itineraries/') || location.pathname.startsWith('/itinerary/');
   const isDedicatedChat = location.pathname === '/chat';
 
   return (
-    <>
+    <ErrorBoundary>
       <Navbar />
       <Routes>
         {/* Public Routes - No login required */}
@@ -36,6 +37,9 @@ const AppLayout: React.FC = () => {
         <Route path="/create" element={<CreateTripPage />} />
         <Route path="/trips/create" element={<CreateTripPage />} />
         <Route path="/itineraries/:itineraryId" element={<ItineraryViewPage />} />
+        <Route path="/itineraries/:id" element={<ItineraryViewPage />} />
+        <Route path="/itinerary/:itineraryId" element={<ItineraryViewPage />} />
+        <Route path="/itinerary/:id" element={<ItineraryViewPage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -79,7 +83,7 @@ const AppLayout: React.FC = () => {
       <Footer />
       {/* Global Floating AI Chat Drawer (rendered on all pages except dedicated /chat and ItineraryViewPage) */}
       {!isItineraryView && !isDedicatedChat && <ChatDrawer />}
-    </>
+    </ErrorBoundary>
   );
 };
 

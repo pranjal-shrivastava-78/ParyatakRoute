@@ -137,10 +137,10 @@ export const formatJourneyDuration = (minutes?: number | null): string => {
  */
 export const getTransportDetails = (act: any, startingCity?: string, destinationCity?: string) => {
   if (!act) return null;
-  const trans = act.transport || {};
-  const cat = (act.category || '').toLowerCase();
-  const name = (act.name || '').toLowerCase();
-  const desc = (act.description || '').toLowerCase();
+  const trans = (act.transport && typeof act.transport === 'object') ? act.transport : (typeof act.transport === 'string' ? { mode: act.transport } : {});
+  const cat = String(act.category || '').toLowerCase();
+  const name = String(act.name || '').toLowerCase();
+  const desc = String(act.description || '').toLowerCase();
 
   const isTransport =
     cat === 'transport' ||
@@ -182,10 +182,12 @@ export const getTransportDetails = (act: any, startingCity?: string, destination
   let endPoint = trans.destination || trans.end_point;
 
   if (!startPoint || !endPoint) {
-    const arrowMatch = act.name.match(/(.+?)\s*(?:→|->|to)\s*(.+)/i);
-    if (arrowMatch) {
-      if (!startPoint) startPoint = arrowMatch[1].replace(/flight|train|bus|transit|express/gi, '').trim();
-      if (!endPoint) endPoint = arrowMatch[2].trim();
+    if (typeof act.name === 'string') {
+      const arrowMatch = act.name.match(/(.+?)\s*(?:→|->|to)\s*(.+)/i);
+      if (arrowMatch) {
+        if (!startPoint) startPoint = arrowMatch[1].replace(/flight|train|bus|transit|express/gi, '').trim();
+        if (!endPoint) endPoint = arrowMatch[2].trim();
+      }
     }
   }
 
@@ -209,7 +211,8 @@ export const getTransportDetails = (act: any, startingCity?: string, destination
 };
 
 export const ItineraryViewPage: React.FC = () => {
-  const { itineraryId } = useParams<{ itineraryId: string }>();
+  const params = useParams<{ itineraryId?: string; id?: string }>();
+  const itineraryId = params.itineraryId || params.id;
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
 
@@ -244,13 +247,17 @@ export const ItineraryViewPage: React.FC = () => {
   const [editedTitle, setEditedTitle] = useState('');
 
   const loadData = async () => {
-    if (!itineraryId) return;
+    if (!itineraryId) {
+      setError('No itinerary ID was provided in the URL. Please verify your link or plan a new trip.');
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
       const itData = await itineraryService.getItinerary(itineraryId);
       setItinerary(itData);
-      setEditedTitle(itData.title);
+      setEditedTitle(itData.title || 'Personalized Travel Itinerary');
 
       // Load associated trip
       if (itData.trip_id) {
@@ -273,6 +280,7 @@ export const ItineraryViewPage: React.FC = () => {
       const msg =
         err?.response?.data?.error?.message ||
         err?.response?.data?.detail ||
+        err?.message ||
         'Could not load itinerary. Please verify you own this plan or are signed in.';
       setError(msg);
     } finally {
@@ -469,7 +477,7 @@ export const ItineraryViewPage: React.FC = () => {
 
   // Comprehensive Trip-Level Budget Calculation (strictly sum of activities across all days without double-counting)
   const tripBudgetSummary = useMemo(() => {
-    if (!itinerary?.days) return null;
+    if (!itinerary?.days || !Array.isArray(itinerary.days)) return null;
 
     const categories = {
       flights: 0,
@@ -494,15 +502,18 @@ export const ItineraryViewPage: React.FC = () => {
     let totalTripCost = 0;
     let hasAnyCost = false;
 
-    itinerary.days.forEach((day: any) => {
+    (itinerary.days || []).forEach((day: any) => {
+      if (!day) return;
       (day.activities || []).forEach((act: any) => {
+        if (!act) return;
         const costInfo = getActivityCost(act);
         const cost = costInfo.cost ?? 0;
         if (costInfo.cost !== null) hasAnyCost = true;
 
-        const cat = (act.category || '').toLowerCase();
-        const name = (act.name || '').toLowerCase();
-        const transMode = (act.transport?.mode || '').toLowerCase();
+        const cat = String(act.category || '').toLowerCase();
+        const name = String(act.name || '').toLowerCase();
+        const transObj = (act.transport && typeof act.transport === 'object') ? act.transport : {};
+        const transMode = String(transObj.mode || (typeof act.transport === 'string' ? act.transport : '')).toLowerCase();
 
         // 1. Flights
         if (
@@ -594,7 +605,7 @@ export const ItineraryViewPage: React.FC = () => {
           totalTripCost += cost;
 
           // Non-duplication rule: only add transport leg if activity itself wasn't already transport!
-          if (act.transport) {
+          if (act.transport && typeof act.transport === 'object') {
             const transRaw = act.transport.estimatedCost ?? act.transport.estimated_cost;
             if (transRaw) {
               const transCost = typeof transRaw === 'number' ? transRaw : parseFloat(String(transRaw).replace(/[^0-9.-]/g, ''));
@@ -617,7 +628,8 @@ export const ItineraryViewPage: React.FC = () => {
 
     const travellersCount = Math.max(1, trip?.travellers || (trip as any)?.travelers_count || 1);
     const perPersonCost = Math.round(totalTripCost / travellersCount);
-    const userBudget = trip?.budget ? Number(trip.budget) : null;
+    const rawBudget = trip?.budget;
+    const userBudget = rawBudget != null && !isNaN(Number(rawBudget)) ? Number(rawBudget) : null;
     const budgetRemaining = userBudget !== null ? userBudget - totalTripCost : null;
     const currency = itinerary.budget?.currency || trip?.currency || 'INR';
 
@@ -634,45 +646,263 @@ export const ItineraryViewPage: React.FC = () => {
     };
   }, [itinerary, trip]);
 
+  // Loading State - Requirement 3
   if (isLoading) {
     return (
-      <div className="main-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-        <div style={{ textAlign: 'center' }}>
-          <Loader2 size={36} className="spinner" style={{ margin: '0 auto 16px auto' }} />
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-ink)' }}>Loading Journey Schedule...</h2>
-          <p style={{ color: 'var(--color-graphite)', fontSize: 14 }}>Synchronizing with Supabase & Groq AI engine</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !itinerary) {
-    return (
-      <div className="main-content" style={{ padding: '60px 0' }}>
-        <div className="container" style={{ maxWidth: 600 }}>
-          <div className="state-empty" style={{ backgroundColor: 'var(--color-white)', border: '1px solid var(--color-divider-gray)' }}>
-            <AlertCircle size={40} color="var(--color-danger)" style={{ margin: '0 auto 12px auto' }} />
-            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Unable to Access Itinerary</h2>
-            <p style={{ fontSize: 14, color: 'var(--color-graphite)', marginBottom: 20 }}>
-              {error || 'This itinerary was not found or authorization was denied.'}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-              <Link to="/trips" className="btn-secondary">
-                View My Trips
-              </Link>
-              <Link to="/create" className="btn-primary">
-                Plan a New Trip
-              </Link>
-            </div>
+      <div
+        className="main-content"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '75vh',
+          padding: '40px 20px',
+          backgroundColor: 'var(--color-bg-main, #F7F5EF)',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 520,
+            width: '100%',
+            textAlign: 'center',
+            backgroundColor: '#ffffff',
+            borderRadius: 24,
+            padding: 'clamp(28px, 5vw, 44px)',
+            border: '1.5px solid var(--color-divider-gray, #D8D4C7)',
+            boxShadow: '0 8px 30px rgba(24, 61, 50, 0.05)',
+          }}
+        >
+          <div
+            style={{
+              width: 68,
+              height: 68,
+              borderRadius: '50%',
+              backgroundColor: 'rgba(24, 61, 50, 0.08)',
+              color: 'var(--color-primary, #183D32)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto',
+            }}
+          >
+            <Loader2 size={36} className="spinner" />
+          </div>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: 'var(--color-terracotta, #D97745)',
+              display: 'inline-block',
+              marginBottom: 8,
+            }}
+          >
+            AI Travel Studio
+          </span>
+          <h2
+            style={{
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontSize: 'clamp(1.4rem, 3vw, 1.85rem)',
+              fontWeight: 800,
+              color: 'var(--color-primary, #183D32)',
+              margin: '0 0 10px 0',
+            }}
+          >
+            Preparing your travel itinerary...
+          </h2>
+          <p
+            style={{
+              color: 'var(--color-graphite, #53635B)',
+              fontSize: 14,
+              lineHeight: 1.6,
+              margin: '0 0 20px 0',
+            }}
+          >
+            Retrieving day-by-day schedules, route navigation, and verified travel budgets.
+          </p>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '6px 14px',
+              borderRadius: 20,
+              backgroundColor: 'var(--color-bg-main, #F7F5EF)',
+              fontSize: 12,
+              fontWeight: 600,
+              color: 'var(--color-primary, #183D32)',
+            }}
+          >
+            <Sparkles size={14} color="var(--color-terracotta, #D97745)" />
+            <span>Synchronizing with ParyatakRoute Engine</span>
           </div>
         </div>
       </div>
     );
   }
 
+  // Error State - Requirement 3
+  if (error || !itinerary) {
+    return (
+      <div
+        className="main-content"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '75vh',
+          padding: '40px 20px',
+          backgroundColor: 'var(--color-bg-main, #F7F5EF)',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 580,
+            width: '100%',
+            textAlign: 'center',
+            backgroundColor: '#ffffff',
+            borderRadius: 24,
+            padding: 'clamp(28px, 5vw, 44px)',
+            border: '1.5px solid var(--color-divider-gray, #D8D4C7)',
+            boxShadow: '0 8px 30px rgba(24, 61, 50, 0.06)',
+          }}
+        >
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              backgroundColor: 'rgba(217, 56, 58, 0.1)',
+              color: 'var(--color-error, #D9383A)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto',
+            }}
+          >
+            <AlertCircle size={32} />
+          </div>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: 'var(--color-terracotta, #D97745)',
+              display: 'inline-block',
+              marginBottom: 8,
+            }}
+          >
+            Itinerary Notice
+          </span>
+          <h2
+            style={{
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontSize: 'clamp(1.4rem, 3vw, 1.85rem)',
+              fontWeight: 800,
+              color: 'var(--color-primary, #183D32)',
+              margin: '0 0 10px 0',
+            }}
+          >
+            Unable to Display Itinerary
+          </h2>
+          <p
+            style={{
+              fontSize: 14,
+              color: 'var(--color-graphite, #53635B)',
+              lineHeight: 1.6,
+              marginBottom: 24,
+            }}
+          >
+            {error || 'This itinerary could not be retrieved from the server. It may still be generating, or the link may be invalid.'}
+          </p>
+
+          <div
+            style={{
+              display: 'flex',
+              gap: 12,
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            <button
+              type="button"
+              onClick={loadData}
+              className="btn-primary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 22px',
+                fontSize: 14,
+                fontWeight: 700,
+                borderRadius: 9999,
+                backgroundColor: 'var(--color-primary, #183D32)',
+                color: '#ffffff',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <RefreshCw size={15} />
+              <span>Retry Loading</span>
+            </button>
+
+            <Link
+              to="/create"
+              className="btn-secondary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 22px',
+                fontSize: 14,
+                fontWeight: 700,
+                borderRadius: 9999,
+                backgroundColor: 'transparent',
+                color: 'var(--color-primary, #183D32)',
+                border: '1.5px solid var(--color-primary, #183D32)',
+                textDecoration: 'none',
+              }}
+            >
+              <Sparkles size={15} />
+              <span>Plan a New Trip</span>
+            </Link>
+
+            <Link
+              to="/"
+              className="btn-secondary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 20px',
+                fontSize: 14,
+                fontWeight: 700,
+                borderRadius: 9999,
+                backgroundColor: 'transparent',
+                color: 'var(--color-graphite, #53635B)',
+                border: '1.5px solid var(--color-divider-gray, #D8D4C7)',
+                textDecoration: 'none',
+              }}
+            >
+              <span>Return to Homepage</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const daysList = Array.isArray(itinerary.days) ? itinerary.days : [];
   const selectedDay =
-    itinerary.days?.find((d: any) => (d.day_number ?? d.dayNumber) === selectedDayNumber) ||
-    itinerary.days?.[0] || { day_number: 1, date: '', activities: [] };
+    daysList.find((d: any) => (d?.day_number ?? d?.dayNumber) === selectedDayNumber) ||
+    daysList[0] || { day_number: 1, date: '', theme: 'Exploration & Sightseeing', activities: [] };
+
+  const selectedDayNumberActual = selectedDay.day_number ?? (selectedDay as any).dayNumber ?? 1;
+  const selectedDayTheme = selectedDay.theme || 'Exploration & Sightseeing';
+  const selectedDayDate = selectedDay.date ? String(selectedDay.date) : '';
+  const selectedDayActivities = Array.isArray(selectedDay.activities) ? selectedDay.activities : [];
 
   const isGuestItinerary =
     itinerary.user_id === '00000000-0000-0000-0000-000000000000' ||
@@ -712,7 +942,7 @@ export const ItineraryViewPage: React.FC = () => {
           <ChevronRight size={14} />
           <Link to="/trips" style={{ color: 'var(--color-graphite)' }}>My Trips</Link>
           <ChevronRight size={14} />
-          <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>{itinerary.title}</span>
+          <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>{itinerary.title || 'Personalized Travel Itinerary'}</span>
         </div>
 
         {/* Guest Session Itinerary Banner */}
@@ -818,7 +1048,7 @@ export const ItineraryViewPage: React.FC = () => {
                     marginBottom: 8,
                   }}
                 >
-                  <span>{itinerary.title}</span>
+                  <span>{itinerary.title || 'Personalized Travel Itinerary'}</span>
                   <button
                     onClick={() => setIsEditingTitle(true)}
                     title="Edit title"
@@ -838,17 +1068,23 @@ export const ItineraryViewPage: React.FC = () => {
               {/* Trip Metadata chips */}
               {trip && (
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 14, fontSize: 13, color: 'var(--color-graphite)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <MapPin size={15} color="var(--color-hopper-blue)" />
-                    <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>{trip.destination}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Calendar size={15} color="var(--color-hopper-blue)" />
-                    <span>{trip.start_date} to {trip.end_date} ({trip.duration_days} days)</span>
-                  </div>
+                  {trip.destination && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <MapPin size={15} color="var(--color-hopper-blue)" />
+                      <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>{trip.destination}</span>
+                    </div>
+                  )}
+                  {trip.start_date && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Calendar size={15} color="var(--color-hopper-blue)" />
+                      <span>{trip.start_date} {trip.end_date ? `to ${trip.end_date}` : ''} {trip.duration_days ? `(${trip.duration_days} days)` : ''}</span>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <DollarSign size={15} color="var(--color-hopper-blue)" />
-                    <span>Budget Target: {trip.currency} {trip.budget.toLocaleString()}</span>
+                    <span>
+                      Budget Target: {trip.currency || 'INR'} {trip.budget != null && !isNaN(Number(trip.budget)) ? Number(trip.budget).toLocaleString() : 'N/A'}
+                    </span>
                   </div>
                 </div>
               )}
@@ -903,7 +1139,7 @@ export const ItineraryViewPage: React.FC = () => {
         </div>
 
         {/* Destination Weather Forecast Card (Open-Meteo) */}
-        {weather && weather.forecast_days && weather.forecast_days.length > 0 && (
+        {weather && Array.isArray(weather.forecast_days) && weather.forecast_days.length > 0 && weather.forecast_days[0] && (
           <div
             style={{
               backgroundColor: 'var(--surface-cloud-surface)',
@@ -939,7 +1175,7 @@ export const ItineraryViewPage: React.FC = () => {
                   Live Weather Forecast • {trip?.destination || 'Destination'}
                 </div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-ink)' }}>
-                  {weather.forecast_days[0].condition} • High {Math.round(weather.forecast_days[0].max_temp_c)}°C / Low {Math.round(weather.forecast_days[0].min_temp_c)}°C
+                  {(weather.forecast_days[0].condition || 'Pleasant')} • High {Math.round(weather.forecast_days[0].max_temp_c ?? 25)}°C / Low {Math.round(weather.forecast_days[0].min_temp_c ?? 18)}°C
                 </div>
               </div>
             </div>
@@ -959,13 +1195,13 @@ export const ItineraryViewPage: React.FC = () => {
                   }}
                 >
                   <div style={{ fontSize: 11, color: 'var(--color-graphite)', fontWeight: 600 }}>
-                    {idx === 0 ? 'Today' : f.date.slice(5)}
+                    {idx === 0 ? 'Today' : (f?.date ? String(f.date).slice(5) : `Day ${idx + 1}`)}
                   </div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-ink)' }}>
-                    {Math.round(f.max_temp_c)}° / {Math.round(f.min_temp_c)}°
+                    {Math.round(f?.max_temp_c ?? 25)}° / {Math.round(f?.min_temp_c ?? 18)}°
                   </div>
                   <div style={{ fontSize: 10, color: 'var(--color-graphite)', textTransform: 'capitalize' }}>
-                    {f.condition.split(' ')[0]}
+                    {(f?.condition || 'Clear').split(' ')[0]}
                   </div>
                 </div>
               ))}
@@ -1305,8 +1541,8 @@ export const ItineraryViewPage: React.FC = () => {
             borderBottom: '1px solid var(--color-divider-gray, #D8D4C7)',
           }}
         >
-          {itinerary.days?.map((d: any) => {
-            const dayNum = d.day_number ?? d.dayNumber;
+          {daysList.map((d: any, idx: number) => {
+            const dayNum = d?.day_number ?? d?.dayNumber ?? (idx + 1);
             const isSelected = selectedDayNumber === dayNum;
             return (
               <button
@@ -1339,7 +1575,7 @@ export const ItineraryViewPage: React.FC = () => {
                     fontWeight: 400,
                   }}
                 >
-                  {d.date ? d.date.slice(5) : ''}
+                  {d?.date ? String(d.date).slice(5) : ''}
                 </span>
               </button>
             );
@@ -1359,22 +1595,22 @@ export const ItineraryViewPage: React.FC = () => {
         >
           <div>
             <h2 className="heading-card" style={{ color: 'var(--color-primary, #183D32)', margin: '0 0 4px 0' }}>
-              Day {selectedDay.day_number ?? (selectedDay as any).dayNumber}: {selectedDay.theme || 'Exploration & Sightseeing'}
+              Day {selectedDayNumberActual}: {selectedDayTheme}
             </h2>
             <p style={{ fontSize: 13, color: 'var(--color-graphite, #53635B)', margin: 0 }}>
-              Date: {selectedDay.date} • {selectedDay.activities?.length || 0} Scheduled Activities
+              Date: {selectedDayDate || 'Scheduled Day'} • {selectedDayActivities.length} Scheduled Activities
             </p>
           </div>
 
           <button
             type="button"
-            onClick={() => setRegenerateDayModal(selectedDay.day_number ?? (selectedDay as any).dayNumber)}
+            onClick={() => setRegenerateDayModal(selectedDayNumberActual)}
             className="btn-secondary"
             style={{ padding: '8px 16px', fontSize: 13 }}
             title="Surgically replan this day with custom AI prompt"
           >
             <RefreshCw size={14} color="var(--color-primary, #183D32)" />
-            <span>Regenerate Day {selectedDay.day_number ?? (selectedDay as any).dayNumber} Plan</span>
+            <span>Regenerate Day {selectedDayNumberActual} Plan</span>
           </button>
         </div>
 
@@ -1401,7 +1637,7 @@ export const ItineraryViewPage: React.FC = () => {
                   OSRM Route Navigation Calculated:
                 </span>{' '}
                 <span style={{ fontSize: 13, color: 'var(--color-ink)' }}>
-                  {dayDirections.distance_km} km total driving distance • ~{Math.round(dayDirections.duration_minutes)} mins transit across Day {selectedDay.day_number ?? (selectedDay as any).dayNumber} destinations
+                  {dayDirections.distance_km} km total driving distance • ~{Math.round(dayDirections.duration_minutes)} mins transit across Day {selectedDayNumberActual} destinations
                 </span>
               </div>
             </div>
@@ -1413,8 +1649,8 @@ export const ItineraryViewPage: React.FC = () => {
 
         {/* Activities Timeline */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {selectedDay.activities && selectedDay.activities.length > 0 ? (
-            selectedDay.activities.map((act: any, index: number) => {
+          {selectedDayActivities.length > 0 ? (
+            selectedDayActivities.map((act: any, index: number) => {
               const costInfo = getActivityCost(act);
               const transInfo = getTransportDetails(act, trip?.starting_city || undefined, trip?.destination || undefined);
               const currencySym = getCurrencySymbol(act.cost_currency || act.costCurrency || itinerary.budget?.currency);
@@ -1575,18 +1811,18 @@ export const ItineraryViewPage: React.FC = () => {
               <Calendar size={32} color="var(--color-placeholder-gray)" style={{ margin: '0 auto 8px auto' }} />
               <p style={{ color: 'var(--color-graphite)' }}>No activities listed for this day yet.</p>
               <button
-                onClick={() => setRegenerateDayModal(selectedDay.day_number)}
+                onClick={() => setRegenerateDayModal(selectedDayNumberActual)}
                 className="btn-primary"
                 style={{ marginTop: 12 }}
               >
-                Plan Activities for Day {selectedDay.day_number}
+                Plan Activities for Day {selectedDayNumberActual}
               </button>
             </div>
           )}
         </div>
 
         {/* Travel Assumptions / Context Notes from Groq AI */}
-        {itinerary.assumptions && itinerary.assumptions.length > 0 && (
+        {Array.isArray(itinerary.assumptions) && itinerary.assumptions.length > 0 && (
           <div
             style={{
               backgroundColor: 'var(--surface-cloud-surface)',
@@ -1601,7 +1837,7 @@ export const ItineraryViewPage: React.FC = () => {
             </h3>
             <ul style={{ paddingLeft: 20, fontSize: 13, color: 'var(--color-graphite)', display: 'flex', flexDirection: 'column', gap: 4 }}>
               {itinerary.assumptions.map((asm, i) => (
-                <li key={i}>{asm}</li>
+                <li key={i}>{typeof asm === 'string' ? asm : JSON.stringify(asm)}</li>
               ))}
             </ul>
           </div>
@@ -1613,7 +1849,7 @@ export const ItineraryViewPage: React.FC = () => {
         <DayRegenerateModal
           itineraryId={itinerary.id}
           dayNumber={regenerateDayModal}
-          currentTheme={selectedDay.theme}
+          currentTheme={selectedDayTheme}
           onClose={() => setRegenerateDayModal(null)}
           onSuccess={(updated) => {
             setItinerary(updated);

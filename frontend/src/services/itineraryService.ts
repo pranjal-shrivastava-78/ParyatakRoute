@@ -56,7 +56,12 @@ export const itineraryService = {
       throw new Error(res.data?.message || 'Failed to generate itinerary with AI');
     }
 
-    const itinerary = res.data.data;
+    const rawData: any = res.data.data;
+    const resolvedId = rawData.id || rawData._id || rawData.itinerary_id || rawData.itineraryId;
+    const itinerary: ItineraryResponse = {
+      ...rawData,
+      id: resolvedId,
+    };
     cacheItinerary(itinerary);
     return itinerary;
   },
@@ -66,13 +71,22 @@ export const itineraryService = {
    * Path: GET /api/v1/itineraries/{itinerary_id} (Public & Authenticated)
    */
   async getItinerary(itineraryId: string): Promise<ItineraryResponse> {
+    if (!itineraryId || itineraryId === 'undefined' || itineraryId === 'null') {
+      throw new Error('Valid Itinerary ID is required to retrieve itinerary.');
+    }
+
     try {
       const res = await apiClient.get<APIResponse<ItineraryResponse>>(
         `/itineraries/${itineraryId}`
       );
 
       if (res.data && res.data.data) {
-        const itinerary = res.data.data;
+        const rawData: any = res.data.data;
+        const resolvedId = rawData.id || rawData._id || rawData.itinerary_id || itineraryId;
+        const itinerary: ItineraryResponse = {
+          ...rawData,
+          id: resolvedId,
+        };
         cacheItinerary(itinerary);
         return itinerary;
       }
