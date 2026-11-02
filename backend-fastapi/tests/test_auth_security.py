@@ -107,3 +107,44 @@ def test_register_and_login_flow(client: TestClient):
     )
     assert logout_res.status_code == 200
     assert logout_res.json()["success"] is True
+
+
+def test_demo_account_instant_login(client: TestClient):
+    """Demo account credentials authenticate immediately and access demo trips."""
+    demo_email = "demo@paryatakroute.in"
+    demo_password = "Paryatak@Demo2026"
+    demo_user_id = "a95fb7ab-5b3c-4074-ac2c-ce8621cc6017"
+
+    # 1. Instant login with demo credentials
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": demo_email, "password": demo_password},
+    )
+    assert response.status_code == 200, f"Demo login failed: {response.text}"
+    body = response.json()
+    assert body["success"] is True
+    assert "tokens" in body["data"]
+    assert "user" in body["data"]
+    assert body["data"]["user"]["email"] == demo_email
+    assert body["data"]["user"]["id"] == demo_user_id
+
+    access_token = body["data"]["tokens"]["accessToken"]
+    auth_headers = {"Authorization": f"Bearer {access_token}"}
+
+    # 2. Access /auth/me with demo session
+    me_res = client.get("/api/v1/auth/me", headers=auth_headers)
+    assert me_res.status_code == 200
+    assert me_res.json()["data"]["email"] == demo_email
+
+    # 3. Access demo trips (Jaipur, Goa, Manali)
+    trips_res = client.get("/api/v1/trips", headers=auth_headers)
+    assert trips_res.status_code == 200
+    trips_body = trips_res.json()
+    assert trips_body["success"] is True
+    trips = trips_body["data"]["trips"]
+    assert len(trips) >= 3
+    destinations = [t["destination"] for t in trips]
+    assert any("Jaipur" in d for d in destinations)
+    assert any("Goa" in d for d in destinations)
+    assert any("Manali" in d for d in destinations)
+

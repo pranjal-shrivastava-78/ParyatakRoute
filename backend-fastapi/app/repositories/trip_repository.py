@@ -8,7 +8,66 @@ from app.core.exceptions import AppException
 from app.core.logging import logger
 
 # In-memory test store used for unit tests or when Supabase client is not configured
-_memory_trips: Dict[str, Dict[str, Any]] = {}
+_memory_trips: Dict[str, Dict[str, Any]] = {
+    "a1111111-2222-3333-4444-555555555551": {
+        "id": "a1111111-2222-3333-4444-555555555551",
+        "user_id": "a95fb7ab-5b3c-4074-ac2c-ce8621cc6017",
+        "destination": "Jaipur, Rajasthan",
+        "starting_city": "Delhi",
+        "start_date": "2026-11-15",
+        "end_date": "2026-11-18",
+        "duration_days": 4,
+        "budget": 25000.0,
+        "currency": "INR",
+        "travellers": 2,
+        "travel_style": "cultural",
+        "interests": ["heritage", "palaces", "bazaars"],
+        "transport_preference": "train",
+        "accommodation_preference": "heritage haveli",
+        "dietary_preferences": "vegetarian",
+        "status": "planned",
+        "created_at": "2026-10-30T00:00:00Z",
+        "updated_at": "2026-10-30T00:00:00Z",
+    },
+    "a2222222-2222-3333-4444-555555555552": {
+        "id": "a2222222-2222-3333-4444-555555555552",
+        "user_id": "a95fb7ab-5b3c-4074-ac2c-ce8621cc6017",
+        "destination": "Goa, India",
+        "starting_city": "Mumbai",
+        "start_date": "2026-12-01",
+        "end_date": "2026-12-05",
+        "duration_days": 5,
+        "budget": 35000.0,
+        "currency": "INR",
+        "travellers": 2,
+        "travel_style": "balanced",
+        "interests": ["beaches", "seafood", "heritage"],
+        "transport_preference": "flight",
+        "accommodation_preference": "beach resort",
+        "status": "planned",
+        "created_at": "2026-10-30T00:00:00Z",
+        "updated_at": "2026-10-30T00:00:00Z",
+    },
+    "a3333333-2222-3333-4444-555555555553": {
+        "id": "a3333333-2222-3333-4444-555555555553",
+        "user_id": "a95fb7ab-5b3c-4074-ac2c-ce8621cc6017",
+        "destination": "Manali & Solang Valley, Himachal Pradesh",
+        "starting_city": "Chandigarh",
+        "start_date": "2026-12-10",
+        "end_date": "2026-12-14",
+        "duration_days": 5,
+        "budget": 30000.0,
+        "currency": "INR",
+        "travellers": 2,
+        "travel_style": "adventure",
+        "interests": ["mountains", "snow", "hiking"],
+        "transport_preference": "car",
+        "accommodation_preference": "mountain chalet",
+        "status": "planned",
+        "created_at": "2026-10-30T00:00:00Z",
+        "updated_at": "2026-10-30T00:00:00Z",
+    },
+}
 
 
 class TripRepository:

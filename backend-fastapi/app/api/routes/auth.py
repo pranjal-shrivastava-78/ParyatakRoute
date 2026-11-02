@@ -35,7 +35,17 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 profile_repo = ProfileRepository()
 
 # Mock users store for test / offline environments
-_mock_users: Dict[str, Dict[str, Any]] = {}
+_mock_users: Dict[str, Dict[str, Any]] = {
+    "demo@paryatakroute.in": {
+        "id": "a95fb7ab-5b3c-4074-ac2c-ce8621cc6017",
+        "name": "Demo Traveler",
+        "email": "demo@paryatakroute.in",
+        "password": "Paryatak@Demo2026",
+        "role": "authenticated",
+        "status": "active",
+        "createdAt": "2026-10-30T00:00:00Z",
+    }
+}
 
 
 def _get_supabase_clients():

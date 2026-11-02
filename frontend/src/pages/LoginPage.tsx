@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Compass, Mail, Lock, LogIn, ArrowRight, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { extractErrorMessage } from '../services/authService';
+import { DEMO_CREDENTIALS } from '../config/authConfig';
 import BrandLogo from '../components/BrandLogo';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [demoNotice, setDemoNotice] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -20,6 +21,8 @@ export const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading || isDemoLoading) return;
+
     if (!email.trim() || !password) {
       setError('Please provide both your email and password');
       return;
@@ -38,11 +41,23 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleTryDemo = () => {
-    setEmail('demo@paryatakroute.in');
-    setPassword('Paryatak@Demo2026');
-    setDemoNotice('Demo account – No registration required.');
+  const handleTryDemo = async () => {
+    if (isLoading || isDemoLoading) return;
+
     setError(null);
+    setIsDemoLoading(true);
+
+    // Prepopulate inputs so user sees the demo account credentials being used
+    setEmail(DEMO_CREDENTIALS.email);
+    setPassword(DEMO_CREDENTIALS.password);
+
+    try {
+      await login(DEMO_CREDENTIALS.email, DEMO_CREDENTIALS.password);
+      navigate(from, { replace: true });
+    } catch (err: any) {
+      setError(extractErrorMessage(err, 'Demo login failed. Please check your connection and retry.'));
+      setIsDemoLoading(false);
+    }
   };
 
   return (
@@ -120,51 +135,44 @@ export const LoginPage: React.FC = () => {
           <button
             type="button"
             onClick={handleTryDemo}
+            disabled={isLoading || isDemoLoading}
             style={{
               width: '100%',
               backgroundColor: 'var(--color-primary, #183D32)',
               color: '#FFFFFF',
               border: 'none',
               borderRadius: 'var(--radius-pills, 9999px)',
-              padding: '9px 16px',
+              padding: '10px 16px',
               fontSize: 13,
               fontWeight: 600,
-              cursor: 'pointer',
+              cursor: isLoading || isDemoLoading ? 'not-allowed' : 'pointer',
+              opacity: isLoading || isDemoLoading ? 0.75 : 1,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 7,
+              gap: 8,
               transition: 'opacity 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.92')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-          >
-            <Sparkles size={14} />
-            <span>Try Demo Account</span>
-          </button>
-        </div>
-
-        {demoNotice && (
-          <div
-            style={{
-              backgroundColor: '#EBF5F0',
-              border: '1px solid #183D32',
-              borderRadius: 'var(--radius-compactcontrols, 8px)',
-              padding: '10px 14px',
-              color: '#183D32',
-              fontSize: 13,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              marginBottom: 'var(--spacing-16, 16px)',
+            onMouseEnter={(e) => {
+              if (!isLoading && !isDemoLoading) e.currentTarget.style.opacity = '0.92';
+            }}
+            onMouseLeave={(e) => {
+              if (!isLoading && !isDemoLoading) e.currentTarget.style.opacity = '1';
             }}
           >
-            <CheckCircle2 size={16} color="var(--color-success, #2E7D32)" style={{ flexShrink: 0 }} />
-            <span>
-              {demoNotice} Click <strong>Sign In</strong> below to continue.
-            </span>
-          </div>
-        )}
+            {isDemoLoading ? (
+              <>
+                <Loader2 size={15} className="spinner" />
+                <span>Signing in to Demo...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles size={14} />
+                <span>Try Demo Account</span>
+              </>
+            )}
+          </button>
+        </div>
 
         {error && (
           <div
@@ -202,6 +210,7 @@ export const LoginPage: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@domain.com"
+                disabled={isLoading || isDemoLoading}
                 required
                 style={{
                   width: '100%',
@@ -210,6 +219,7 @@ export const LoginPage: React.FC = () => {
                   border: '1px solid var(--color-divider-gray)',
                   fontSize: 15,
                   outline: 'none',
+                  opacity: isLoading || isDemoLoading ? 0.7 : 1,
                 }}
                 onFocus={(e) => (e.target.style.borderColor = 'var(--color-hopper-blue)')}
                 onBlur={(e) => (e.target.style.borderColor = 'var(--color-divider-gray)')}
@@ -232,6 +242,7 @@ export const LoginPage: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                disabled={isLoading || isDemoLoading}
                 required
                 style={{
                   width: '100%',
@@ -240,6 +251,7 @@ export const LoginPage: React.FC = () => {
                   border: '1px solid var(--color-divider-gray)',
                   fontSize: 15,
                   outline: 'none',
+                  opacity: isLoading || isDemoLoading ? 0.7 : 1,
                 }}
                 onFocus={(e) => (e.target.style.borderColor = 'var(--color-hopper-blue)')}
                 onBlur={(e) => (e.target.style.borderColor = 'var(--color-divider-gray)')}
@@ -249,7 +261,7 @@ export const LoginPage: React.FC = () => {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || isDemoLoading}
             className="btn-primary"
             style={{
               width: '100%',
@@ -261,6 +273,8 @@ export const LoginPage: React.FC = () => {
               alignItems: 'center',
               justifyContent: 'center',
               gap: 8,
+              cursor: isLoading || isDemoLoading ? 'not-allowed' : 'pointer',
+              opacity: isLoading || isDemoLoading ? 0.75 : 1,
             }}
           >
             {isLoading ? (

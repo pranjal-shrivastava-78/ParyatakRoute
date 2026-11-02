@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Lock, Mail, User, AlertCircle, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
+import { X, Lock, Mail, User, AlertCircle, Loader2, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { extractErrorMessage } from '../services/authService';
+import { DEMO_CREDENTIALS } from '../config/authConfig';
 import BrandLogo from './BrandLogo';
 
 interface AuthModalProps {
@@ -20,16 +21,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [demoNotice, setDemoNotice] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
 
   const { login, register } = useAuth();
 
-  const handleTryDemo = () => {
-    setEmail('demo@paryatakroute.in');
-    setPassword('Paryatak@Demo2026');
-    setDemoNotice('Demo account – No registration required.');
+  const handleTryDemo = async () => {
+    if (isSubmitting || isDemoLoading) return;
+
     setError(null);
+    setIsDemoLoading(true);
+
+    setEmail(DEMO_CREDENTIALS.email);
+    setPassword(DEMO_CREDENTIALS.password);
+
+    try {
+      await login(DEMO_CREDENTIALS.email, DEMO_CREDENTIALS.password);
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (err: any) {
+      setError(extractErrorMessage(err, 'Demo login failed. Please try again.'));
+      setIsDemoLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -178,41 +191,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <button
               type="button"
               onClick={handleTryDemo}
+              disabled={isSubmitting || isDemoLoading}
               style={{
                 backgroundColor: 'var(--color-primary, #183D32)',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 'var(--radius-pills, 9999px)',
-                padding: '4px 12px',
+                padding: '6px 14px',
                 fontSize: 12,
                 fontWeight: 600,
-                cursor: 'pointer',
+                cursor: isSubmitting || isDemoLoading ? 'not-allowed' : 'pointer',
+                opacity: isSubmitting || isDemoLoading ? 0.75 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                transition: 'opacity 0.15s ease',
               }}
             >
-              Try Demo Account
+              {isDemoLoading ? (
+                <>
+                  <Loader2 size={13} className="spinner" />
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <span>Try Demo Account</span>
+              )}
             </button>
-          </div>
-        )}
-
-        {demoNotice && mode === 'login' && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '8px 12px',
-              borderRadius: 8,
-              backgroundColor: '#EBF5F0',
-              border: '1px solid #183D32',
-              color: '#183D32',
-              fontSize: 12,
-              marginBottom: 16,
-            }}
-          >
-            <CheckCircle2 size={15} color="var(--color-success, #2E7D32)" style={{ flexShrink: 0 }} />
-            <span>
-              {demoNotice} Click <strong>Sign In</strong> below.
-            </span>
           </div>
         )}
 
@@ -246,6 +250,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   placeholder="e.g. Pranjal Shrivastava"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  disabled={isSubmitting || isDemoLoading}
                   style={{ paddingLeft: 38 }}
                   required
                 />
@@ -266,6 +271,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 placeholder="traveler@paryatakroute.org"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isSubmitting || isDemoLoading}
                 style={{ paddingLeft: 38 }}
                 required
               />
@@ -285,6 +291,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 placeholder="•••••••• (min 8 chars)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isSubmitting || isDemoLoading}
                 style={{ paddingLeft: 38 }}
                 required
               />
@@ -299,7 +306,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             type="submit"
             className="btn-primary"
             style={{ width: '100%', marginTop: 8, height: 44 }}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isDemoLoading}
           >
             {isSubmitting ? (
               <>
